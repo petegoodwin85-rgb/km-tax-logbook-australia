@@ -103,10 +103,101 @@ document.getElementById('authForm').addEventListener('submit',async e=>{e.preven
 document.getElementById('signOutBtn').addEventListener('click',async()=>{await db.auth.signOut();state={trips:[],vehicle:{},vehicleId:null};setSignedInUI(null);showMessage('authMessage','You have been logged out.')});
 async function activateUser(user){setSignedInUI(user);await loadCloudData()}
 async function loadCloudData(){showMessage('authMessage','');const [tripsRes,vehicleRes]=await Promise.all([db.from('trips').select('*').order('trip_date',{ascending:false}),db.from('vehicles').select('*').order('created_at',{ascending:false}).limit(1)]);if(tripsRes.error||vehicleRes.error){alert('Could not load your cloud records: '+(tripsRes.error||vehicleRes.error).message);return}state.trips=(tripsRes.data||[]).map(t=>({id:t.id,date:t.trip_date,type:t.trip_type||'Business',start:t.start_odometer,end:t.end_odometer,from:t.start_location,to:t.end_location,purpose:t.purpose}));const v=(vehicleRes.data||[])[0];state.vehicleId=v?.id||null;state.vehicle=v?{driver:v.driver,make:v.make,model:v.model,rego:v.registration,engine:v.engine_capacity,logStart:v.logbook_start,logEnd:v.logbook_end,periodStartOdo:v.period_start_odometer,periodEndOdo:v.period_end_odometer,yearStartOdo:v.financial_year_start_odometer,yearEndOdo:v.financial_year_end_odometer}:{};fillVehicle();render()}
-function render(){const biz=state.trips.filter(t=>t.type==='Business').reduce((a,t)=>a+km(t),0),priv=state.trips.filter(t=>t.type==='Private').reduce((a,t)=>a+km(t),0),all=biz+priv;document.getElementById('totalBusiness').textContent=biz.toLocaleString()+' km';document.getElementById('totalPrivate').textContent=priv.toLocaleString()+' km';document.getElementById('tripCount').textContent=state.trips.length;document.getElementById('businessPct').textContent=all?((biz/all)*100).toFixed(1)+'%':'—';let v=state.vehicle||{};document.getElementById('periodStatus').textContent=v.logStart&&v.logEnd?`${v.logStart} → ${v.logEnd}`:'Not set';let latest=state.trips.slice().sort((a,b)=>b.date.localeCompare(a.date))[0];document.getElementById('latestOdo').textContent=latest?Number(latest.end).toLocaleString()+' km':'—';const q=(val('search')||'').toLowerCase();let ts=state.trips.slice().sort((a,b)=>b.date.localeCompare(a.date)).filter(t=>[t.date,t.type,t.from,t.to,t.purpose].join(' ').toLowerCase().includes(q));document.getElementById('tripRows').innerHTML=ts.map(t=>`<tr><td>${esc(t.date)}</td><td>${esc(t.type)}</td><td><b>${esc(t.from||'—')} → ${esc(t.to||'—')}</b><br>${esc(t.purpose)}</td><td>${Number(t.start).toLocaleString()} → ${Number(t.end).toLocaleString()}</td><td>${km(t).toLocaleString()} km</td><td class="no-print"><button class="danger" onclick="deleteTrip('${t.id}')">Delete</button></td></tr>`).join('');document.getElementById('emptyRecords').classList.toggle('hidden',ts.length>0)}
+function render(){
+  const biz=state.trips.filter(t=>t.type==='Business').reduce((a,t)=>a+km(t),0);
+  const priv=state.trips.filter(t=>t.type==='Private').reduce((a,t)=>a+km(t),0);
+  const all=biz+priv;
+
+  document.getElementById('totalBusiness').textContent=biz.toLocaleString()+' km';
+  document.getElementById('totalPrivate').textContent=priv.toLocaleString()+' km';
+  document.getElementById('tripCount').textContent=state.trips.length;
+  document.getElementById('businessPct').textContent=all?((biz/all)*100).toFixed(1)+'%':'—';
+
+  let v=state.vehicle||{};
+  document.getElementById('periodStatus').textContent=v.logStart&&v.logEnd?`${v.logStart} → ${v.logEnd}`:'Not set';
+
+  const updatedTrip={
+  id:data.id,
+  date:data.trip_date,
+  type:data.trip_type,
+  start:data.start_odometer,
+  end:data.end_odometer,
+  from:data.start_location,
+  to:data.end_location,
+  purpose:data.purpose
+};
+
+if(editingTripId){
+  const index=state.trips.findIndex(t=>t.id===editingTripId);
+  state.trips[index]=updatedTrip;
+  editingTripId=null;
+}else{
+  state.trips.unshift(updatedTrip);
+}
+  const q=(val('search')||'').toLowerCase();
+  let ts=state.trips.slice().sort((a,b)=>b.date.localeCompare(a.date))
+    .filter(t=>[t.date,t.type,t.from,t.to,t.purpose].join(' ').toLowerCase().includes(q));
+
+  document.getElementById('tripRows').innerHTML=ts.map(t=>`
+    <tr>
+      <td>${esc(t.date)}</td>
+      <td>${esc(t.type)}</td>
+      <td><b>${esc(t.from||'—')} → ${esc(t.to||'—')}</b><br>${esc(t.purpose)}</td>
+      <td>${Number(t.start).toLocaleString()} → ${Number(t.end).toLocaleString()}</td>
+      <td>${km(t).toLocaleString()} km</td>
+      <td class="no-print">
+     <button class="secondary" onclick="editTrip('${t.id}')">Edit</button>
+<button class="danger" onclick="deleteTrip('${t.id}')">Delete</button>
+      </td>
+    </tr>
+  `).join('');
+
+  document.getElementById('emptyRecords').classList.toggle('hidden',ts.length>0);
+}document.getElementById('totalBusiness').textContent=biz.toLocaleString()+' km';document.getElementById('totalPrivate').textContent=priv.toLocaleString()+' km';document.getElementById('tripCount').textContent=state.trips.length;document.getElementById('businessPct').textContent=all?((biz/all)*100).toFixed(1)+'%':'—';let v=state.vehicle||{};document.getElementById('periodStatus').textContent=v.logStart&&v.logEnd?`${v.logStart} → ${v.logEnd}`:'Not set';let latest=state.trips.slice().sort((a,b)=>b.date.localeCompare(a.date))[0];document.getElementById('latestOdo').textContent=latest?Number(latest.end).toLocaleString()+' km':'—';const q=(val('search')||'').toLowerCase();let ts=state.trips.slice().sort((a,b)=>b.date.localeCompare(a.date)).filter(t=>[t.date,t.type,t.from,t.to,t.purpose].join(' ').toLowerCase().includes(q));document.getElementById('tripRows').innerHTML=ts.map(t=>`<tr><td>${esc(t.date)}</td><td>${esc(t.type)}</td><td><b>${esc(t.from||'—')} → ${esc(t.to||'—')}</b><br>${esc(t.purpose)}</td><td>${Number(t.start).toLocaleString()} → ${Number(t.end).toLocaleString()}</td><td>${km(t).toLocaleString()} km</td><td class="no-print"><button class="danger" onclick="deleteTrip('${t.id}')">Delete</button></td></tr>`).join('');document.getElementById('emptyRecords').classList.toggle('hidden',ts.length>0)}
 document.getElementById('tripForm').addEventListener('submit',async e=>{e.preventDefault();const start=Number(val('startOdo')),end=Number(val('endOdo')),err=document.getElementById('tripError');if(end<start){err.textContent='Ending odometer must be greater than or equal to the starting reading.';return}if(!val('purpose').trim()){err.textContent='Please enter the reason for this trip.';return}err.textContent='Saving to your account…';const record={user_id:currentUser.id,trip_date:val('date'),trip_type:val('type'),start_odometer:start,end_odometer:end,kilometres:end-start,start_location:val('from').trim()||'Not entered',end_location:val('to').trim()||'Not entered',purpose:val('purpose').trim()};const {data,error}=await db.from('trips').insert(record).select().single();if(error){err.textContent='Could not save trip: '+error.message;return}state.trips.unshift({id:data.id,date:data.trip_date,type:data.trip_type,start:data.start_odometer,end:data.end_odometer,from:data.start_location,to:data.end_location,purpose:data.purpose});render();resetTrip();showTab('records')});
-function resetTrip(){document.getElementById('tripForm').reset();setVal('date',new Date().toISOString().slice(0,10));document.getElementById('tripError').textContent=''}
-async function deleteTrip(id){if(!confirm('Delete this trip record?'))return;const {error}=await db.from('trips').delete().eq('id',id);if(error){alert('Could not delete trip: '+error.message);return}state.trips=state.trips.filter(t=>t.id!==id);render()}
+render();
+resetTrip();
+document.querySelector('#tripForm button[type="submit"]').textContent='Save trip';
+showTab('records');let editingTripId=null;
+  function editTrip(id){
+    let result;
+
+if(editingTripId){
+  result=await db.from('trips')
+    .update(record)
+    .eq('id',editingTripId)
+    .select()
+    .single();
+}else{
+  result=await db.from('trips')
+    .insert(record)
+    .select()
+    .single();
+}
+
+const {data,error}=result;
+  const t=state.trips.find(x=>x.id===id);
+  if(!t)return;
+
+  editingTripId=id;
+  setVal('date',t.date);
+  setVal('type',t.type);
+  setVal('startOdo',t.start);
+  setVal('endOdo',t.end);
+  setVal('from',t.from);
+  setVal('to',t.to);
+  setVal('purpose',t.purpose);
+
+  document.querySelector('#tripForm button[type="submit"]').textContent='Update trip';
+  document.getElementById('tripError').textContent='';
+  showTab('trip');
+  
+
+  document.querySelector('#tripForm button[type="submit"]').textContent='Update trip';
+  document.getElementById('tripError').textContent='';
+  showTab('trip');
+  }
+ }async function deleteTrip(id){if(!confirm('Delete this trip record?'))return;const {error}=await db.from('trips').delete().eq('id',id);if(error){alert('Could not delete trip: '+error.message);return}state.trips=state.trips.filter(t=>t.id!==id);render()}
 const vehicleFields=['driver','make','model','rego','engine','logStart','logEnd','periodStartOdo','periodEndOdo','yearStartOdo','yearEndOdo'];
 document.getElementById('vehicleForm').addEventListener('submit',async e=>{e.preventDefault();const v={user_id:currentUser.id,driver:val('driver'),make:val('make'),model:val('model'),registration:val('rego'),engine_capacity:val('engine'),logbook_start:val('logStart')||null,logbook_end:val('logEnd')||null,period_start_odometer:numOrNull('periodStartOdo'),period_end_odometer:numOrNull('periodEndOdo'),financial_year_start_odometer:numOrNull('yearStartOdo'),financial_year_end_odometer:numOrNull('yearEndOdo')};let result;if(state.vehicleId)result=await db.from('vehicles').update(v).eq('id',state.vehicleId).select().single();else result=await db.from('vehicles').insert(v).select().single();if(result.error){alert('Could not save vehicle: '+result.error.message);return}state.vehicleId=result.data.id;state.vehicle={driver:v.driver,make:v.make,model:v.model,rego:v.registration,engine:v.engine_capacity,logStart:v.logbook_start,logEnd:v.logbook_end,periodStartOdo:v.period_start_odometer,periodEndOdo:v.period_end_odometer,yearStartOdo:v.financial_year_start_odometer,yearEndOdo:v.financial_year_end_odometer};render();alert('Vehicle details saved securely to your account.')});
 function numOrNull(id){return val(id)===''?null:Number(val(id))}
