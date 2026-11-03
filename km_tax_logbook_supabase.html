@@ -1,35 +1,65 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>KM Tax Logbook Australia</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
-:root{--navy:#14243a;--gold:#d6ad52;--bg:#f3f5f8;--card:#fff;--muted:#667085;--line:#e3e7ed;--green:#18794e}
-*{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:#172033}
-header{background:var(--navy);color:white;padding:22px 16px 18px;border-bottom:4px solid var(--gold)}header .wrap,main{max-width:1050px;margin:auto}h1{font-size:25px;margin:0 0 5px}header p{margin:0;color:#dbe2ec;font-size:14px}
-main{padding:16px;display:grid;gap:14px}.tabs{display:flex;gap:8px;flex-wrap:wrap}.tab{border:1px solid var(--line);background:white;padding:10px 14px;border-radius:10px;font-weight:650;color:var(--navy)}.tab.active{background:var(--navy);color:white}
-.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;box-shadow:0 2px 8px #14243a0a}.card h2{font-size:18px;margin:0 0 13px}.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.stat{background:#f8f9fb;border-radius:10px;padding:13px}.stat small{display:block;color:var(--muted);font-size:12px}.stat strong{font-size:22px;display:block;margin-top:4px;overflow-wrap:anywhere}
-form .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.field{display:flex;flex-direction:column;gap:5px}.field.full{grid-column:1/-1}label{font-size:13px;font-weight:650;color:#344054}input,select,textarea{font:inherit;border:1px solid #cbd3df;border-radius:9px;padding:11px;background:white;width:100%;min-width:0}textarea{min-height:75px;resize:vertical}.hint{font-size:12px;color:var(--muted)}
-button,.btn{font:inherit;border:0;border-radius:9px;padding:11px 14px;background:var(--navy);color:white;font-weight:650;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;gap:6px}.gold{background:var(--gold);color:#1c2634}.secondary{background:#edf1f6;color:var(--navy)}.danger{background:#fff0f0;color:#a32020}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:13px}
-table{width:100%;border-collapse:collapse;font-size:13px}th,td{text-align:left;padding:10px 8px;border-bottom:1px solid var(--line);vertical-align:top}th{font-size:12px;color:var(--muted)}.tablewrap{overflow-x:auto}.empty{padding:20px;text-align:center;color:var(--muted)}.hidden{display:none!important}.notice{background:#fff8e6;border:1px solid #f0d99c;border-radius:10px;padding:12px;font-size:13px}.good{color:var(--green);font-weight:700}
+:root{--navy:#14243a;--gold:#d6ad52;--bg:#f3f5f8;--card:#fff;--muted:#667085;--line:#e3e7ed}
+*{box-sizing:border-box}
+body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:#172033}
+header{background:var(--navy);color:white;padding:22px 16px 18px;border-bottom:4px solid var(--gold)}
+header .wrap,main{max-width:1050px;margin:auto}
+h1{font-size:25px;margin:0 0 5px}
+header p{margin:0;color:#dbe2ec;font-size:14px}
+main{padding:16px;display:grid;gap:14px}
+.tabs{display:flex;gap:8px;flex-wrap:wrap;margin-top:4px}
+.tab{border:1px solid var(--line);background:white;padding:10px 14px;border-radius:10px;font-weight:650;color:var(--navy)}
+.tab.active{background:var(--navy);color:white}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;box-shadow:0 2px 8px #14243a0a}
+.card h2{font-size:18px;margin:0 0 13px}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.stat{background:#f8f9fb;border-radius:10px;padding:13px}
+.stat small{display:block;color:var(--muted);font-size:12px}
+.stat strong{font-size:22px;display:block;margin-top:4px;overflow-wrap:anywhere}
+form .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.field{display:flex;flex-direction:column;gap:5px}
+.field.full{grid-column:1/-1}
+label{font-size:13px;font-weight:650;color:#344054}
+input,select,textarea{font:inherit;border:1px solid #cbd3df;border-radius:9px;padding:11px;background:white;width:100%;min-width:0}
+textarea{min-height:75px;resize:vertical}
+.hint{font-size:12px;color:var(--muted)}
+button,.btn{font:inherit;border:0;border-radius:9px;padding:11px 14px;background:var(--navy);color:white;font-weight:650;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;gap:6px}
+.gold{background:var(--gold);color:#1c2634}
+.secondary{background:#edf1f6;color:var(--navy)}
+.danger{background:#fff0f0;color:#a32020}
+.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:13px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{text-align:left;padding:10px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:12px;color:var(--muted)}
+.tablewrap{overflow-x:auto}
+.empty{padding:20px;text-align:center;color:var(--muted)}
+.hidden{display:none!important}
+.notice{background:#fff8e6;border:1px solid #f0d99c;border-radius:10px;padding:12px;font-size:13px}
 footer{color:var(--muted);font-size:12px;padding:0 16px 25px;max-width:1050px;margin:auto}
+#authCard{max-width:700px;width:100%;margin:20px auto}
+button:disabled{opacity:.6;cursor:wait}
 @media(max-width:620px){.stats{grid-template-columns:1fr 1fr}.stats .stat:last-child{grid-column:1/-1}form .grid{grid-template-columns:1fr}.field.full{grid-column:auto}main{padding:10px}.card{padding:13px}h1{font-size:22px}}
-@media print{header,.tabs,.no-print,button,.actions,footer{display:none!important}body{background:white}main{display:block;padding:0}.card{box-shadow:none;border:0;page-break-inside:avoid}.hidden{display:block!important}}
-#authCard{max-width:700px;width:100%;margin:20px auto}.tabs{margin-top:4px}button:disabled{opacity:.6;cursor:wait}
+@media print{header,.tabs,.no-print,button,.actions,footer{display:none!important}body{background:white}main{display:block;padding:0}.card{box-shadow:none;border:0;page-break-inside:avoid}}
 </style>
 </head>
 <body>
 <header><div class="wrap"><h1>🚗 KM Tax Logbook Australia</h1><p>Australian work & business kilometres · Secure customer accounts and cloud records</p></div></header>
 <main>
 <section id="authCard" class="card">
-  <h2 id="authHeading">Customer login</h2>
-  <p class="hint">Sign in to access your logbook from your devices. New customers can create an account below.</p>
-  <form id="authForm"><div class="grid">
-    <div class="field"><label for="authEmail">Email address</label><input id="authEmail" type="email" autocomplete="email" required></div>
-    <div class="field"><label for="authPassword">Password</label><input id="authPassword" type="password" autocomplete="current-password" minlength="8" required></div>
-  </div><div id="authMessage" class="hint" style="margin-top:10px" role="status"></div>
-  <div class="actions"><button class="gold" id="authSubmit" type="submit">Log in</button><button class="secondary" type="button" id="toggleAuth">Create account</button></div></form>
+<h2 id="authHeading">Customer login</h2>
+<p class="hint">Sign in to access your logbook from your devices. New customers can create an account below.</p>
+<form id="authForm"><div class="grid">
+<div class="field"><label for="authEmail">Email address</label><input id="authEmail" type="email" autocomplete="email" required></div>
+<div class="field"><label for="authPassword">Password</label><input id="authPassword" type="password" autocomplete="current-password" minlength="8" required></div>
+</div><div id="authMessage" class="hint" style="margin-top:10px" role="status"></div>
+<div class="actions"><button class="gold" id="authSubmit" type="submit">Log in</button><button class="secondary" type="button" id="toggleAuth">Create account</button></div></form>
 </section>
 <div id="appArea" class="hidden">
 <div class="actions no-print" style="justify-content:flex-end;margin:0"><span id="signedInAs" class="hint"></span><button class="secondary" id="signOutBtn" type="button">Log out</button></div>
@@ -50,7 +80,7 @@ footer{color:var(--muted);font-size:12px;padding:0 16px 25px;max-width:1050px;ma
 <div class="notice" style="margin-top:14px"><b>Remember:</b> Record each trip as soon as possible and use a specific purpose, such as “Travel to client site for property inspection” rather than just “work”. Ordinary home-to-work commuting is generally private, unless an exception applies.</div>
 </section>
 <section id="trip" class="page hidden">
-<div class="card"><h2>Record a trip</h2>
+<div class="card"><h2 id="tripHeading">Record a trip</h2>
 <form id="tripForm"><div class="grid">
 <div class="field"><label for="date">Trip date</label><input id="date" type="date" required></div>
 <div class="field"><label for="type">Trip type</label><select id="type"><option value="Business">Business / work</option><option value="Private">Private</option></select></div>
@@ -59,10 +89,13 @@ footer{color:var(--muted);font-size:12px;padding:0 16px 25px;max-width:1050px;ma
 <div class="field"><label for="from">Trip started at</label><input id="from" placeholder="e.g. Home / workshop"></div>
 <div class="field"><label for="to">Destination</label><input id="to" placeholder="e.g. Client address / supplier"></div>
 <div class="field full"><label for="purpose">Reason / purpose of trip</label><textarea id="purpose" required placeholder="Describe the work-related reason clearly"></textarea><span class="hint">For work trips, be specific enough to explain how the travel relates to earning income.</span></div>
-</div><div id="tripError" class="hint" style="color:#b42318;margin-top:8px"></div><div class="actions"><button class="gold" type="submit">Save trip</button><button class="secondary" type="button" onclick="resetTrip()">Clear form</button></div></form></div>
+</div><div id="tripError" class="hint" style="color:#b42318;margin-top:8px" role="status"></div>
+<div class="actions"><button class="gold" id="tripSubmit" type="submit">Save trip</button><button class="secondary" type="button" onclick="resetTrip()">Clear form</button><button class="secondary hidden" id="cancelEdit" type="button" onclick="cancelEdit()">Cancel edit</button></div></form></div>
 </section>
 <section id="records" class="page hidden">
-<div class="card"><h2>Trip records</h2><div class="actions no-print" style="margin:0 0 12px"><input id="search" placeholder="Search destination, purpose or type" oninput="render()" style="max-width:340px"><button class="secondary" onclick="exportCSV()">Export CSV</button><button class="secondary" onclick="window.print()">Print / Save PDF</button></div><div class="tablewrap"><table><thead><tr><th>Date</th><th>Type</th><th>Route & purpose</th><th>Odometer</th><th>KM</th><th class="no-print">Action</th></tr></thead><tbody id="tripRows"></tbody></table></div><div id="emptyRecords" class="empty">No trips yet. Add your first trip to get started.</div></div>
+<div class="card"><h2>Trip records</h2><div class="actions no-print" style="margin:0 0 12px"><input id="search" placeholder="Search destination, purpose or type" oninput="render()" style="max-width:340px"><button class="secondary" onclick="exportCSV()">Export CSV</button><button class="secondary" onclick="window.print()">Print / Save PDF</button></div>
+<div class="tablewrap"><table><thead><tr><th>Date</th><th>Type</th><th>Route & purpose</th><th>Odometer</th><th>KM</th><th class="no-print">Action</th></tr></thead><tbody id="tripRows"></tbody></table></div>
+<div id="emptyRecords" class="empty">No trips yet. Add your first trip to get started.</div></div>
 </section>
 <section id="vehicle" class="page hidden">
 <div class="card"><h2>Vehicle details</h2><form id="vehicleForm"><div class="grid">
@@ -77,137 +110,289 @@ footer{color:var(--muted);font-size:12px;padding:0 16px 25px;max-width:1050px;ma
 <div class="field"><label for="periodEndOdo">Odometer at period end (km)</label><input id="periodEndOdo" type="number" min="0" step="0.1"></div>
 <div class="field"><label for="yearStartOdo">Financial year opening odometer (km)</label><input id="yearStartOdo" type="number" min="0" step="0.1"></div>
 <div class="field"><label for="yearEndOdo">Financial year closing odometer (km)</label><input id="yearEndOdo" type="number" min="0" step="0.1"></div>
-</div><div class="actions"><button class="gold" type="submit">Save vehicle details</button></div></form><p class="hint">Australian financial year: 1 July to 30 June. Keep opening and closing odometer records for each income year.</p></div>
-<div class="card"><h2>Backup & data</h2><p class="hint">Your records are saved to your signed-in account in the cloud. Export a CSV regularly and keep a separate copy somewhere safe.</p><div class="actions"><button class="secondary" onclick="exportBackup()">Download full backup</button><label class="btn secondary" for="importFile">Import backup</label><input id="importFile" type="file" accept="application/json" class="hidden" onchange="importBackup(event)"><button class="danger" onclick="clearAll()">Delete all records</button></div></div>
+</div><div class="actions"><button class="gold" type="submit">Save vehicle details</button></div></form>
+<p class="hint">Australian financial year: 1 July to 30 June. Keep opening and closing odometer records for each income year.</p></div>
+<div class="card"><h2>Backup & data</h2><p class="hint">Your records are saved to your signed-in account in the cloud. Export a CSV regularly and keep a separate copy somewhere safe.</p><div class="actions"><button class="secondary" onclick="exportBackup()">Download full backup</button><button class="danger" onclick="clearAll()">Delete all trip records</button></div></div>
 </section>
 </div>
 </main>
 <footer>Record-keeping helper only, not tax or legal advice. Check your circumstances and current ATO guidance. Your logbook records are stored in your Supabase account and protected by account-level database policies.</footer>
 <script>
-// Public browser key only. Never place a Supabase service_role/secret key in this file.
-const SUPABASE_URL = 'https://qtuolmttcmvorlfwjwxy.supabase.co';
-const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_IpFQgqmWkFJg3dvRSculeA_j2lDMz1p';
-const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
-let state={trips:[],vehicle:{},vehicleId:null}, currentUser=null, authMode='login';
+const SUPABASE_URL='https://qtuolmttcmvorlfwjwxy.supabase.co';
+const SUPABASE_PUBLISHABLE_KEY='sb_publishable_IpFQgqmWkFJg3dvRSculeA_j2lDMz1p';
+const db=window.supabase.createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY);
+let state={trips:[],vehicle:{},vehicleId:null};
+let currentUser=null;
+let authMode='login';
+let editingTripId=null;
+
 function val(id){return document.getElementById(id).value}
 function setVal(id,v){document.getElementById(id).value=v??''}
-function showMessage(id,msg,isError=false){const el=document.getElementById(id);el.textContent=msg;el.style.color=isError?'#b42318':'#18794e'}
-function showTab(name){document.querySelectorAll('.page').forEach(x=>x.classList.toggle('hidden',x.id!==name));document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('active',x.dataset.tab===name));if(name==='trip'&&!val('date'))setVal('date',new Date().toISOString().slice(0,10));window.scrollTo({top:0,behavior:'smooth'})}
-document.querySelectorAll('.tab').forEach(b=>b.addEventListener('click',()=>showTab(b.dataset.tab)));
 function km(t){return Number(t.end)-Number(t.start)}
 function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
-function setSignedInUI(user){currentUser=user;document.getElementById('authCard').classList.toggle('hidden',!!user);document.getElementById('appArea').classList.toggle('hidden',!user);document.getElementById('signedInAs').textContent=user?'Signed in: '+user.email:''}
-function updateAuthMode(){document.getElementById('authHeading').textContent=authMode==='login'?'Customer login':'Create your account';document.getElementById('authSubmit').textContent=authMode==='login'?'Log in':'Create account';document.getElementById('toggleAuth').textContent=authMode==='login'?'Create account':'Back to login';document.getElementById('authPassword').autocomplete=authMode==='login'?'current-password':'new-password';showMessage('authMessage','')}
+function showMessage(id,msg,isError=false){const el=document.getElementById(id);el.textContent=msg;el.style.color=isError?'#b42318':'#18794e'}
+
+function showTab(name){
+ document.querySelectorAll('.page').forEach(x=>x.classList.toggle('hidden',x.id!==name));
+ document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('active',x.dataset.tab===name));
+ if(name==='trip'&&!val('date'))setVal('date',new Date().toISOString().slice(0,10));
+ window.scrollTo({top:0,behavior:'smooth'});
+}
+document.querySelectorAll('.tab').forEach(b=>b.addEventListener('click',()=>showTab(b.dataset.tab)));
+
+function setSignedInUI(user){
+ currentUser=user;
+ document.getElementById('authCard').classList.toggle('hidden',!!user);
+ document.getElementById('appArea').classList.toggle('hidden',!user);
+ document.getElementById('signedInAs').textContent=user?'Signed in: '+user.email:'';
+}
+function updateAuthMode(){
+ document.getElementById('authHeading').textContent=authMode==='login'?'Customer login':'Create your account';
+ document.getElementById('authSubmit').textContent=authMode==='login'?'Log in':'Create account';
+ document.getElementById('toggleAuth').textContent=authMode==='login'?'Create account':'Back to login';
+ document.getElementById('authPassword').autocomplete=authMode==='login'?'current-password':'new-password';
+ showMessage('authMessage','');
+}
 document.getElementById('toggleAuth').addEventListener('click',()=>{authMode=authMode==='login'?'signup':'login';updateAuthMode()});
-document.getElementById('authForm').addEventListener('submit',async e=>{e.preventDefault();const email=val('authEmail').trim(),password=val('authPassword');const btn=document.getElementById('authSubmit');btn.disabled=true;showMessage('authMessage','Please wait…');try{if(authMode==='signup'){const {data,error}=await db.auth.signUp({email,password,options:{emailRedirectTo:location.origin+location.pathname}});if(error)throw error;if(data.session){await activateUser(data.session.user)}else{showMessage('authMessage','Account created. Check your email and confirm your address, then return here and log in.')}}else{const {data,error}=await db.auth.signInWithPassword({email,password});if(error)throw error;await activateUser(data.user)}}catch(err){showMessage('authMessage',err.message||'Unable to complete sign-in.',true)}finally{btn.disabled=false}});
-document.getElementById('signOutBtn').addEventListener('click',async()=>{await db.auth.signOut();state={trips:[],vehicle:{},vehicleId:null};setSignedInUI(null);showMessage('authMessage','You have been logged out.')});
-async function activateUser(user){setSignedInUI(user);await loadCloudData()}
-async function loadCloudData(){showMessage('authMessage','');const [tripsRes,vehicleRes]=await Promise.all([db.from('trips').select('*').order('trip_date',{ascending:false}),db.from('vehicles').select('*').order('created_at',{ascending:false}).limit(1)]);if(tripsRes.error||vehicleRes.error){alert('Could not load your cloud records: '+(tripsRes.error||vehicleRes.error).message);return}state.trips=(tripsRes.data||[]).map(t=>({id:t.id,date:t.trip_date,type:t.trip_type||'Business',start:t.start_odometer,end:t.end_odometer,from:t.start_location,to:t.end_location,purpose:t.purpose}));const v=(vehicleRes.data||[])[0];state.vehicleId=v?.id||null;state.vehicle=v?{driver:v.driver,make:v.make,model:v.model,rego:v.registration,engine:v.engine_capacity,logStart:v.logbook_start,logEnd:v.logbook_end,periodStartOdo:v.period_start_odometer,periodEndOdo:v.period_end_odometer,yearStartOdo:v.financial_year_start_odometer,yearEndOdo:v.financial_year_end_odometer}:{};fillVehicle();render()}
-function render(){
-  const biz=state.trips.filter(t=>t.type==='Business').reduce((a,t)=>a+km(t),0);
-  const priv=state.trips.filter(t=>t.type==='Private').reduce((a,t)=>a+km(t),0);
-  const all=biz+priv;
 
-  document.getElementById('totalBusiness').textContent=biz.toLocaleString()+' km';
-  document.getElementById('totalPrivate').textContent=priv.toLocaleString()+' km';
-  document.getElementById('tripCount').textContent=state.trips.length;
-  document.getElementById('businessPct').textContent=all?((biz/all)*100).toFixed(1)+'%':'—';
-
-  let v=state.vehicle||{};
-  document.getElementById('periodStatus').textContent=v.logStart&&v.logEnd?`${v.logStart} → ${v.logEnd}`:'Not set';
-
-  const updatedTrip={
-  id:data.id,
-  date:data.trip_date,
-  type:data.trip_type,
-  start:data.start_odometer,
-  end:data.end_odometer,
-  from:data.start_location,
-  to:data.end_location,
-  purpose:data.purpose
-};
-
-if(editingTripId){
-  const index=state.trips.findIndex(t=>t.id===editingTripId);
-  state.trips[index]=updatedTrip;
-  editingTripId=null;
-}else{
-  state.trips.unshift(updatedTrip);
-}
-  const q=(val('search')||'').toLowerCase();
-  let ts=state.trips.slice().sort((a,b)=>b.date.localeCompare(a.date))
-    .filter(t=>[t.date,t.type,t.from,t.to,t.purpose].join(' ').toLowerCase().includes(q));
-
-  document.getElementById('tripRows').innerHTML=ts.map(t=>`
-    <tr>
-      <td>${esc(t.date)}</td>
-      <td>${esc(t.type)}</td>
-      <td><b>${esc(t.from||'—')} → ${esc(t.to||'—')}</b><br>${esc(t.purpose)}</td>
-      <td>${Number(t.start).toLocaleString()} → ${Number(t.end).toLocaleString()}</td>
-      <td>${km(t).toLocaleString()} km</td>
-      <td class="no-print">
-     <button class="secondary" onclick="editTrip('${t.id}')">Edit</button>
-<button class="danger" onclick="deleteTrip('${t.id}')">Delete</button>
-      </td>
-    </tr>
-  `).join('');
-
-  document.getElementById('emptyRecords').classList.toggle('hidden',ts.length>0);
-}document.getElementById('totalBusiness').textContent=biz.toLocaleString()+' km';document.getElementById('totalPrivate').textContent=priv.toLocaleString()+' km';document.getElementById('tripCount').textContent=state.trips.length;document.getElementById('businessPct').textContent=all?((biz/all)*100).toFixed(1)+'%':'—';let v=state.vehicle||{};document.getElementById('periodStatus').textContent=v.logStart&&v.logEnd?`${v.logStart} → ${v.logEnd}`:'Not set';let latest=state.trips.slice().sort((a,b)=>b.date.localeCompare(a.date))[0];document.getElementById('latestOdo').textContent=latest?Number(latest.end).toLocaleString()+' km':'—';const q=(val('search')||'').toLowerCase();let ts=state.trips.slice().sort((a,b)=>b.date.localeCompare(a.date)).filter(t=>[t.date,t.type,t.from,t.to,t.purpose].join(' ').toLowerCase().includes(q));document.getElementById('tripRows').innerHTML=ts.map(t=>`<tr><td>${esc(t.date)}</td><td>${esc(t.type)}</td><td><b>${esc(t.from||'—')} → ${esc(t.to||'—')}</b><br>${esc(t.purpose)}</td><td>${Number(t.start).toLocaleString()} → ${Number(t.end).toLocaleString()}</td><td>${km(t).toLocaleString()} km</td><td class="no-print"><button class="danger" onclick="deleteTrip('${t.id}')">Delete</button></td></tr>`).join('');document.getElementById('emptyRecords').classList.toggle('hidden',ts.length>0)}
-document.getElementById('tripForm').addEventListener('submit',async e=>{e.preventDefault();const start=Number(val('startOdo')),end=Number(val('endOdo')),err=document.getElementById('tripError');if(end<start){err.textContent='Ending odometer must be greater than or equal to the starting reading.';return}if(!val('purpose').trim()){err.textContent='Please enter the reason for this trip.';return}err.textContent='Saving to your account…';const record={user_id:currentUser.id,trip_date:val('date'),trip_type:val('type'),start_odometer:start,end_odometer:end,kilometres:end-start,start_location:val('from').trim()||'Not entered',end_location:val('to').trim()||'Not entered',purpose:val('purpose').trim()};const {data,error}=await db.from('trips').insert(record).select().single();if(error){err.textContent='Could not save trip: '+error.message;return}state.trips.unshift({id:data.id,date:data.trip_date,type:data.trip_type,start:data.start_odometer,end:data.end_odometer,from:data.start_location,to:data.end_location,purpose:data.purpose});render();resetTrip();showTab('records')});
-render();
-resetTrip();
-document.querySelector('#tripForm button[type="submit"]').textContent='Save trip';
-showTab('records');let editingTripId=null;
-  function editTrip(id){
-    let result;
-
-if(editingTripId){
-  result=await db.from('trips')
-    .update(record)
-    .eq('id',editingTripId)
-    .select()
-    .single();
-}else{
-  result=await db.from('trips')
-    .insert(record)
-    .select()
-    .single();
-}
-
-const {data,error}=result;
-  const t=state.trips.find(x=>x.id===id);
-  if(!t)return;
-
-  editingTripId=id;
-  setVal('date',t.date);
-  setVal('type',t.type);
-  setVal('startOdo',t.start);
-  setVal('endOdo',t.end);
-  setVal('from',t.from);
-  setVal('to',t.to);
-  setVal('purpose',t.purpose);
-
-  document.querySelector('#tripForm button[type="submit"]').textContent='Update trip';
-  document.getElementById('tripError').textContent='';
-  showTab('trip');
-  
-
-  document.querySelector('#tripForm button[type="submit"]').textContent='Update trip';
-  document.getElementById('tripError').textContent='';
-  showTab('trip');
+document.getElementById('authForm').addEventListener('submit',async e=>{
+ e.preventDefault();
+ const email=val('authEmail').trim(),password=val('authPassword'),btn=document.getElementById('authSubmit');
+ btn.disabled=true;showMessage('authMessage','Please wait…');
+ try{
+  if(authMode==='signup'){
+   const {data,error}=await db.auth.signUp({email,password,options:{emailRedirectTo:location.origin+location.pathname}});
+   if(error)throw error;
+   if(data.session)await activateUser(data.session.user);
+   else showMessage('authMessage','Account created. Check your email and confirm your address, then return here and log in.');
+  }else{
+   const {data,error}=await db.auth.signInWithPassword({email,password});
+   if(error)throw error;
+   await activateUser(data.user);
   }
- }async function deleteTrip(id){if(!confirm('Delete this trip record?'))return;const {error}=await db.from('trips').delete().eq('id',id);if(error){alert('Could not delete trip: '+error.message);return}state.trips=state.trips.filter(t=>t.id!==id);render()}
+ }catch(err){showMessage('authMessage',err.message||'Unable to complete sign-in.',true)}
+ finally{btn.disabled=false}
+});
+document.getElementById('signOutBtn').addEventListener('click',async()=>{
+ await db.auth.signOut();
+ state={trips:[],vehicle:{},vehicleId:null};
+ setSignedInUI(null);
+ showMessage('authMessage','You have been logged out.');
+});
+
+async function activateUser(user){setSignedInUI(user);await loadCloudData()}
+
+async function loadCloudData(){
+ const [tripsRes,vehicleRes]=await Promise.all([
+  db.from('trips').select('*').order('trip_date',{ascending:false}),
+  db.from('vehicles').select('*').order('created_at',{ascending:false}).limit(1)
+ ]);
+ if(tripsRes.error||vehicleRes.error){
+  alert('Could not load your cloud records: '+(tripsRes.error||vehicleRes.error).message);
+  return;
+ }
+ state.trips=(tripsRes.data||[]).map(t=>({
+  id:t.id,date:t.trip_date,type:t.trip_type||'Business',
+  start:t.start_odometer,end:t.end_odometer,
+  from:t.start_location,to:t.end_location,purpose:t.purpose
+ }));
+ const v=(vehicleRes.data||[])[0];
+ state.vehicleId=v?.id||null;
+ state.vehicle=v?{
+  driver:v.driver,make:v.make,model:v.model,rego:v.registration,
+  engine:v.engine_capacity,logStart:v.logbook_start,logEnd:v.logbook_end,
+  periodStartOdo:v.period_start_odometer,periodEndOdo:v.period_end_odometer,
+  yearStartOdo:v.financial_year_start_odometer,yearEndOdo:v.financial_year_end_odometer
+ }:{};
+ fillVehicle();
+ render();
+}
+
+function render(){
+ const biz=state.trips.filter(t=>t.type==='Business').reduce((a,t)=>a+km(t),0);
+ const priv=state.trips.filter(t=>t.type==='Private').reduce((a,t)=>a+km(t),0);
+ const all=biz+priv;
+ document.getElementById('totalBusiness').textContent=biz.toLocaleString()+' km';
+ document.getElementById('totalPrivate').textContent=priv.toLocaleString()+' km';
+ document.getElementById('tripCount').textContent=state.trips.length;
+ document.getElementById('businessPct').textContent=all?((biz/all)*100).toFixed(1)+'%':'—';
+
+ const v=state.vehicle||{};
+ document.getElementById('periodStatus').textContent=v.logStart&&v.logEnd?`${v.logStart} → ${v.logEnd}`:'Not set';
+ const latest=state.trips.slice().sort((a,b)=>b.date.localeCompare(a.date))[0];
+ document.getElementById('latestOdo').textContent=latest?Number(latest.end).toLocaleString()+' km':'—';
+
+ const q=(document.getElementById('search')?.value||'').toLowerCase();
+ const ts=state.trips.slice().sort((a,b)=>b.date.localeCompare(a.date))
+  .filter(t=>[t.date,t.type,t.from,t.to,t.purpose].join(' ').toLowerCase().includes(q));
+
+ document.getElementById('tripRows').innerHTML=ts.map(t=>`
+ <tr>
+  <td>${esc(t.date)}</td>
+  <td>${esc(t.type)}</td>
+  <td><b>${esc(t.from||'—')} → ${esc(t.to||'—')}</b><br>${esc(t.purpose)}</td>
+  <td>${Number(t.start).toLocaleString()} → ${Number(t.end).toLocaleString()}</td>
+  <td>${km(t).toLocaleString()} km</td>
+  <td class="no-print">
+   <button class="secondary" onclick="editTrip('${String(t.id).replace(/'/g,"\\'")}')">Edit</button>
+   <button class="danger" onclick="deleteTrip('${String(t.id).replace(/'/g,"\\'")}')">Delete</button>
+  </td>
+ </tr>`).join('');
+ document.getElementById('emptyRecords').classList.toggle('hidden',ts.length>0);
+}
+
+function resetTrip(){
+ editingTripId=null;
+ document.getElementById('tripForm').reset();
+ setVal('date',new Date().toISOString().slice(0,10));
+ document.getElementById('tripError').textContent='';
+ document.getElementById('tripHeading').textContent='Record a trip';
+ document.getElementById('tripSubmit').textContent='Save trip';
+ document.getElementById('cancelEdit').classList.add('hidden');
+}
+function cancelEdit(){resetTrip();showTab('records')}
+
+function editTrip(id){
+ const t=state.trips.find(x=>String(x.id)===String(id));
+ if(!t){alert('Trip not found. Refresh your records and try again.');return}
+ editingTripId=t.id;
+ setVal('date',t.date);
+ setVal('type',t.type);
+ setVal('startOdo',t.start);
+ setVal('endOdo',t.end);
+ setVal('from',t.from);
+ setVal('to',t.to);
+ setVal('purpose',t.purpose);
+ document.getElementById('tripHeading').textContent='Edit trip';
+ document.getElementById('tripSubmit').textContent='Update trip';
+ document.getElementById('cancelEdit').classList.remove('hidden');
+ document.getElementById('tripError').textContent='';
+ showTab('trip');
+}
+
+document.getElementById('tripForm').addEventListener('submit',async e=>{
+ e.preventDefault();
+ if(!currentUser){alert('Please log in again.');return}
+ const start=Number(val('startOdo')),end=Number(val('endOdo'));
+ const err=document.getElementById('tripError');
+ const btn=document.getElementById('tripSubmit');
+ if(end<start){err.textContent='Ending odometer must be greater than or equal to the starting reading.';return}
+ if(!val('purpose').trim()){err.textContent='Please enter the reason for this trip.';return}
+ const record={
+  user_id:currentUser.id,
+  trip_date:val('date'),
+  trip_type:val('type'),
+  start_odometer:start,
+  end_odometer:end,
+  kilometres:end-start,
+  start_location:val('from').trim()||'Not entered',
+  end_location:val('to').trim()||'Not entered',
+  purpose:val('purpose').trim()
+ };
+ btn.disabled=true;
+ err.textContent=editingTripId?'Updating trip…':'Saving trip…';
+ try{
+  let result;
+  if(editingTripId){
+   result=await db.from('trips').update(record).eq('id',editingTripId).select().single();
+  }else{
+   result=await db.from('trips').insert(record).select().single();
+  }
+  if(result.error)throw result.error;
+  const d=result.data;
+  const updated={id:d.id,date:d.trip_date,type:d.trip_type,start:d.start_odometer,end:d.end_odometer,from:d.start_location,to:d.end_location,purpose:d.purpose};
+  if(editingTripId){
+   const index=state.trips.findIndex(t=>String(t.id)===String(editingTripId));
+   if(index>=0)state.trips[index]=updated;
+   else state.trips.unshift(updated);
+  }else{
+   state.trips.unshift(updated);
+  }
+  resetTrip();
+  render();
+  showTab('records');
+ }catch(error){
+  err.textContent='Could not save trip: '+(error.message||String(error));
+ }finally{
+  btn.disabled=false;
+ }
+});
+
+async function deleteTrip(id){
+ if(!confirm('Delete this trip record?'))return;
+ const {error}=await db.from('trips').delete().eq('id',id);
+ if(error){alert('Could not delete trip: '+error.message);return}
+ state.trips=state.trips.filter(t=>String(t.id)!==String(id));
+ render();
+}
+
 const vehicleFields=['driver','make','model','rego','engine','logStart','logEnd','periodStartOdo','periodEndOdo','yearStartOdo','yearEndOdo'];
-document.getElementById('vehicleForm').addEventListener('submit',async e=>{e.preventDefault();const v={user_id:currentUser.id,driver:val('driver'),make:val('make'),model:val('model'),registration:val('rego'),engine_capacity:val('engine'),logbook_start:val('logStart')||null,logbook_end:val('logEnd')||null,period_start_odometer:numOrNull('periodStartOdo'),period_end_odometer:numOrNull('periodEndOdo'),financial_year_start_odometer:numOrNull('yearStartOdo'),financial_year_end_odometer:numOrNull('yearEndOdo')};let result;if(state.vehicleId)result=await db.from('vehicles').update(v).eq('id',state.vehicleId).select().single();else result=await db.from('vehicles').insert(v).select().single();if(result.error){alert('Could not save vehicle: '+result.error.message);return}state.vehicleId=result.data.id;state.vehicle={driver:v.driver,make:v.make,model:v.model,rego:v.registration,engine:v.engine_capacity,logStart:v.logbook_start,logEnd:v.logbook_end,periodStartOdo:v.period_start_odometer,periodEndOdo:v.period_end_odometer,yearStartOdo:v.financial_year_start_odometer,yearEndOdo:v.financial_year_end_odometer};render();alert('Vehicle details saved securely to your account.')});
 function numOrNull(id){return val(id)===''?null:Number(val(id))}
-function fillVehicle(){vehicleFields.forEach(k=>setVal(k,(state.vehicle||{})[k]))}
+function fillVehicle(){vehicleFields.forEach(k=>setVal(k,(state.vehicle||{})[k]));}
+
+document.getElementById('vehicleForm').addEventListener('submit',async e=>{
+ e.preventDefault();
+ if(!currentUser){alert('Please log in again.');return}
+ const v={
+  user_id:currentUser.id,
+  driver:val('driver'),make:val('make'),model:val('model'),
+  registration:val('rego'),engine_capacity:val('engine'),
+  logbook_start:val('logStart')||null,logbook_end:val('logEnd')||null,
+  period_start_odometer:numOrNull('periodStartOdo'),
+  period_end_odometer:numOrNull('periodEndOdo'),
+  financial_year_start_odometer:numOrNull('yearStartOdo'),
+  financial_year_end_odometer:numOrNull('yearEndOdo')
+ };
+ let result;
+ if(state.vehicleId)result=await db.from('vehicles').update(v).eq('id',state.vehicleId).select().single();
+ else result=await db.from('vehicles').insert(v).select().single();
+ if(result.error){alert('Could not save vehicle: '+result.error.message);return}
+ state.vehicleId=result.data.id;
+ state.vehicle={driver:v.driver,make:v.make,model:v.model,rego:v.registration,engine:v.engine_capacity,logStart:v.logbook_start,logEnd:v.logbook_end,periodStartOdo:v.period_start_odometer,periodEndOdo:v.period_end_odometer,yearStartOdo:v.financial_year_start_odometer,yearEndOdo:v.financial_year_end_odometer};
+ render();
+ alert('Vehicle details saved securely to your account.');
+});
+
 function csvCell(s){return '"'+String(s??'').replace(/"/g,'""')+'"'}
-function exportCSV(){const rows=[['Date','Type','Start location','Destination','Purpose','Start odometer km','End odometer km','Distance km'],...state.trips.slice().sort((a,b)=>a.date.localeCompare(b.date)).map(t=>[t.date,t.type,t.from,t.to,t.purpose,t.start,t.end,km(t)])];const csv=rows.map(r=>r.map(csvCell).join(',')).join('\r\n');download('km-tax-logbook-trips.csv','text/csv;charset=utf-8','\ufeff'+csv)}
-function exportBackup(){download('km-tax-logbook-backup.json','application/json',JSON.stringify(state,null,2))}
-function download(name,type,data){const a=document.createElement('a'),u=URL.createObjectURL(new Blob([data],{type}));a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),1000)}
-function clearAll(){alert('For safety, delete individual trip records from Trip records. Contact support if you need to remove your account data.')}
-async function init(){const {data:{session}}=await db.auth.getSession();if(session)await activateUser(session.user);else setSignedInUI(null);db.auth.onAuthStateChange((_event,session)=>{if(session&&!currentUser)activateUser(session.user);else if(!session&&currentUser){currentUser=null;setSignedInUI(null)}});setVal('date',new Date().toISOString().slice(0,10))}
+function exportCSV(){
+ const rows=[['Date','Type','Start location','Destination','Purpose','Start odometer km','End odometer km','Distance km'],
+ ...state.trips.slice().sort((a,b)=>a.date.localeCompare(b.date)).map(t=>[t.date,t.type,t.from,t.to,t.purpose,t.start,t.end,km(t)])];
+ const csv=rows.map(r=>r.map(csvCell).join(',')).join('\r\n');
+ download('km-tax-logbook-trips.csv','text/csv;charset=utf-8','\ufeff'+csv);
+}
+function exportBackup(){
+ download('km-tax-logbook-backup.json','application/json',JSON.stringify(state,null,2));
+}
+function download(name,type,data){
+ const a=document.createElement('a');
+ const u=URL.createObjectURL(new Blob([data],{type}));
+ a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();
+ setTimeout(()=>URL.revokeObjectURL(u),1000);
+}
+async function clearAll(){
+ if(!confirm('Delete ALL your trip records from your account? This cannot be undone.'))return;
+ const {error}=await db.from('trips').delete().eq('user_id',currentUser.id);
+ if(error){alert('Could not delete records: '+error.message);return}
+ state.trips=[];
+ render();
+ alert('All trip records have been deleted.');
+}
+
+async function init(){
+ const {data:{session}}=await db.auth.getSession();
+ if(session)await activateUser(session.user);
+ else setSignedInUI(null);
+ db.auth.onAuthStateChange((_event,session)=>{
+  if(session&&!currentUser)activateUser(session.user);
+  else if(!session&&currentUser){
+   currentUser=null;
+   state={trips:[],vehicle:{},vehicleId:null};
+   setSignedInUI(null);
+  }
+ });
+ setVal('date',new Date().toISOString().slice(0,10));
+}
 init();
 </script>
-</body></html>
+</body>
+</html>
