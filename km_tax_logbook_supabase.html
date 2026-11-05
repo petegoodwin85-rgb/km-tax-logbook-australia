@@ -77,7 +77,25 @@ button:disabled{opacity:.6;cursor:wait}
 <div class="stat"><small>Logbook period</small><strong id="periodStatus" style="font-size:16px">Not set</strong></div>
 <div class="stat"><small>Latest odometer</small><strong id="latestOdo">—</strong></div>
 </div><div class="actions no-print"><button class="gold" onclick="showTab('trip')">＋ Record a trip</button><button class="secondary" onclick="showTab('vehicle')">Set up vehicle</button><button class="secondary" onclick="exportCSV()">Export CSV</button></div></div>
-<div class="notice" style="margin-top:14px"><b>Remember:</b> Record each trip as soon as possible and use a specific purpose, such as “Travel to client site for property inspection” rather than just “work”. Ordinary home-to-work commuting is generally private, unless an exception applies.</div>
+
+<div class="card" style="margin-top:14px">
+  <h2>ATO Logbook Compliance Checks</h2>
+  <div id="complianceStatus" class="notice">
+    Compliance checks will appear here.
+  </div>
+  <div style="margin-top:12px">
+    <p><b>Logbook period:</b> <span id="checkPeriod">Not checked</span></p>
+    <p><b>Odometer readings:</b> <span id="checkOdo">Not checked</span></p>
+    <p><b>Trip information:</b> <span id="checkTrips">Not checked</span></p>
+    <p><b>Financial year:</b> <span id="checkYear">Not checked</span></p>
+    <p><b>Business-use calculation:</b> <span id="checkBusiness">Not checked</span></p>
+  </div>
+  <div class="actions no-print">
+    <button class="gold" onclick="runComplianceChecks()">Run compliance checks</button>
+    <button class="secondary" onclick="printComplianceReport()">Print compliance report</button>
+  </div>
+</div>
+ <div class="notice" style="margin-top:14px"><b>Remember:</b> Record each trip as soon as possible and use a specific purpose, such as “Travel to client site for property inspection” rather than just “work”. Ordinary home-to-work commuting is generally private, unless an exception applies.</div>
 </section>
 <section id="trip" class="page hidden">
 <div class="card"><h2 id="tripHeading">Record a trip</h2>
@@ -376,6 +394,137 @@ async function clearAll(){
  state.trips=[];
  render();
  alert('All trip records have been deleted.');
+}
+
+function runComplianceChecks(){
+
+ const v=state.vehicle||{};
+ const trips=state.trips||[];
+
+ const periodStart=v.logStart;
+ const periodEnd=v.logEnd;
+
+ const setCheck=(id,message)=>{
+  document.getElementById(id).textContent=message;
+ };
+
+ let warnings=0;
+
+ // 1. Logbook period
+ let periodTrips=[];
+
+ if(!periodStart||!periodEnd){
+  setCheck('checkPeriod','⚠️ Start and end dates required');
+  warnings++;
+ }else{
+  const start=new Date(periodStart+'T00:00:00Z');
+  const end=new Date(periodEnd+'T00:00:00Z');
+  const days=Math.round((end-start)/86400000);
+
+  if(days<0){
+   setCheck('checkPeriod','⚠️ End date is before start date');
+   warnings++;
+  }else{
+   periodTrips=trips.filter(t=>
+    t.date>=periodStart&&t.date<=periodEnd
+   );
+
+   if(days<84){
+    setCheck('checkPeriod','⚠️ Less than 12 weeks');
+    warnings++;
+   }else{
+    setCheck('checkPeriod','✓ At least 12 weeks ('+days+' days)');
+   }
+  }
+ }
+
+ // 2. Odometer readings
+ const startOdo=Number(v.periodStartOdo);
+ const endOdo=Number(v.periodEndOdo);
+
+ if(v.periodStartOdo==null||v.periodStartOdo===''||
+    v.periodEndOdo==null||v.periodEndOdo===''){
+  setCheck('checkOdo','⚠️ Period odometer readings missing');
+  warnings++;
+ }else if(endOdo<startOdo){
+  setCheck('checkOdo','⚠️ Ending reading is lower than starting reading');
+  warnings++;
+ }else{
+  setCheck('checkOdo','✓ Readings are in increasing order');
+ }
+
+ // 3. Trip information
+ const incomplete=periodTrips.filter(t=>
+  !t.date||
+  !t.purpose||
+  !t.from||
+  !t.to||
+  t.start==null||
+  t.end==null||
+  Number(t.end)<Number(t.start)||
+  !['Business','Private'].includes(t.type)
+ );
+
+ if(periodTrips.length===0){
+  setCheck('checkTrips','⚠️ No trips recorded within the logbook period');
+  warnings++;
+ }else if(incomplete.length>0){
+  setCheck('checkTrips','⚠️ '+incomplete.length+' incomplete or incorrect trip(s)');
+  warnings++;
+ }else{
+  setCheck('checkTrips','✓ '+periodTrips.length+' trips recorded with required details');
+ }
+
+ // 4. Financial year readings
+ const fyStart=v.yearStartOdo;
+ const fyEnd=v.yearEndOdo;
+
+ if(fyStart==null||fyStart===''||
+    fyEnd==null||fyEnd===''){
+  setCheck('checkYear','⚠️ Opening or closing reading missing');
+  warnings++;
+ }else if(Number(fyEnd)<Number(fyStart)){
+  setCheck('checkYear','⚠️ Closing reading is lower than opening');
+  warnings++;
+ }else{
+  setCheck('checkYear','✓ Financial year readings are in order');
+ }
+
+ // 5. Business-use calculation
+ const business=periodTrips
+  .filter(t=>t.type==='Business')
+  .reduce((sum,t)=>sum+km(t),0);
+
+ const privateKm=periodTrips
+  .filter(t=>t.type==='Private')
+  .reduce((sum,t)=>sum+km(t),0);
+
+ const total=business+privateKm;
+
+ if(total===0){
+  setCheck('checkBusiness','⚠️ No kilometres available to calculate');
+  warnings++;
+ }else{
+  setCheck('checkBusiness',
+   (business/total*100).toFixed(1)+'% business use ('+
+   business.toLocaleString()+' business km / '+
+   total.toLocaleString()+' total km)'
+  );
+ }
+
+ // Overall status
+ const status=document.getElementById('complianceStatus');
+
+ if(warnings===0){
+  status.textContent='✓ All preliminary record checks passed. This is not ATO approval or a guarantee of deductibility.';
+ }else{
+  status.textContent='⚠️ '+warnings+' item(s) need attention. Review the checks below.';
+ }
+}
+
+function printComplianceReport(){
+ runComplianceChecks();
+ window.print();
 }
 
 async function init(){
