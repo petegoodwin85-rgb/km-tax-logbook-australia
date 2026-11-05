@@ -522,10 +522,134 @@ function runComplianceChecks(){
  }
 }
 
+
 function printComplianceReport(){
+
  runComplianceChecks();
- window.print();
+
+ const v=state.vehicle||{};
+ const trips=state.trips||[];
+
+ const esc=value=>String(value??'').replace(/[&<>"']/g,c=>({
+  '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+ }[c]));
+
+ const businessTrips=trips.filter(t=>
+  t.type==='Business'&&t.date>=v.logStart&&t.date<=v.logEnd
+ );
+
+ const privateTrips=trips.filter(t=>
+  t.type==='Private'&&t.date>=v.logStart&&t.date<=v.logEnd
+ );
+
+ const periodTrips=[...businessTrips,...privateTrips]
+  .sort((a,b)=>a.date.localeCompare(b.date));
+
+ const businessKm=businessTrips.reduce((s,t)=>s+km(t),0);
+ const privateKm=privateTrips.reduce((s,t)=>s+km(t),0);
+ const totalKm=businessKm+privateKm;
+ const percentage=totalKm?(businessKm/totalKm*100).toFixed(1):'0.0';
+
+ const rows=periodTrips.map(t=>`
+  <tr>
+   <td>${esc(t.date)}</td>
+   <td>${esc(t.type)}</td>
+   <td>${esc(t.from)}</td>
+   <td>${esc(t.to)}</td>
+   <td>${esc(t.purpose)}</td>
+   <td>${Number(km(t)).toLocaleString()}</td>
+  </tr>
+ `).join('');
+
+ const report=window.open('','_blank');
+
+ if(!report){
+  alert('Please allow pop-ups for this website to print your report.');
+  return;
+ }
+
+ report.document.write(`
+ <!DOCTYPE html>
+ <html>
+ <head>
+ <title>KM Tax Logbook Report</title>
+ <style>
+ body{font-family:Arial,sans-serif;color:#222;margin:30px}
+ h1,h2{color:#14243a}
+ h1{border-bottom:3px solid #d4af37;padding-bottom:12px}
+ table{width:100%;border-collapse:collapse;margin-top:15px}
+ th,td{border:1px solid #ccc;padding:8px;text-align:left;font-size:12px}
+ th{background:#14243a;color:white}
+ .summary{background:#f2f2f2;padding:15px;margin:15px 0}
+ .signature{margin-top:50px}
+ .line{border-bottom:1px solid #222;width:300px;margin-top:35px}
+ .note{font-size:11px;color:#555;margin-top:30px}
+ @media print{body{margin:15mm}}
+ </style>
+ </head>
+ <body>
+ <h1>KM Tax Logbook Australia</h1>
+ <h2>Vehicle Logbook Report</h2>
+
+ <h3>Driver and Vehicle Details</h3>
+ <p><b>Driver:</b> ${esc(v.driver)}</p>
+ <p><b>Make:</b> ${esc(v.make)}</p>
+ <p><b>Model:</b> ${esc(v.model)}</p>
+ <p><b>Registration:</b> ${esc(v.registration)}</p>
+
+ <h3>Logbook Period and Odometer</h3>
+ <p><b>Start date:</b> ${esc(v.logStart)}</p>
+ <p><b>End date:</b> ${esc(v.logEnd)}</p>
+ <p><b>Starting odometer:</b> ${esc(v.periodStartOdo)} km</p>
+ <p><b>Ending odometer:</b> ${esc(v.periodEndOdo)} km</p>
+
+ <h3>Kilometre Summary</h3>
+ <div class="summary">
+ <p><b>Business kilometres:</b> ${businessKm.toLocaleString()} km</p>
+ <p><b>Private kilometres:</b> ${privateKm.toLocaleString()} km</p>
+ <p><b>Total recorded kilometres:</b> ${totalKm.toLocaleString()} km</p>
+ <h2>Business use: ${percentage}%</h2>
+ </div>
+
+ <h3>Trip Records</h3>
+ <table>
+ <thead><tr>
+ <th>Date</th><th>Type</th><th>From</th><th>To</th>
+ <th>Purpose</th><th>KM</th>
+ </tr></thead>
+ <tbody>${rows||'<tr><td colspan="6">No trips recorded</td></tr>'}</tbody>
+ </table>
+
+ <h3>Financial Year Odometer Readings</h3>
+ <p><b>Opening reading:</b> ${esc(v.yearStartOdo)} km</p>
+ <p><b>Closing reading:</b> ${esc(v.yearEndOdo)} km</p>
+
+ <h3>Driver Declaration</h3>
+ <p>I declare that the information in this report is true and accurate
+ to the best of my knowledge.</p>
+
+ <div class="signature">
+ <p>Driver signature:</p><div class="line"></div>
+ <p>Date:</p><div class="line"></div>
+ </div>
+
+ <p class="note">
+ This report is generated from information entered into KM Tax Logbook
+ Australia. It is not ATO approval or a guarantee of deductibility.
+ The driver is responsible for ensuring records meet applicable ATO
+ requirements.
+ </p>
+
+ <script>
+ window.onload=function(){window.print();}
+ <\/script>
+ </body>
+ </html>
+ `);
+
+ report.document.close();
 }
+
 
 async function init(){
  const {data:{session}}=await db.auth.getSession();
