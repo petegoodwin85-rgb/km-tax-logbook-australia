@@ -561,7 +561,13 @@ function printComplianceReport(){
 
  const odoDistance=odoValid?odoEnd-odoStart:0;
  const odoDifference=odoValid?odoDistance-totalKm:0;
+const reconciliationCoverage=odoValid&&odoDistance>0
+ ? (totalKm/odoDistance*100).toFixed(1)
+ : 'Not available';
 
+const unaccountedPercentage=odoValid&&odoDistance>0
+ ? (odoDifference/odoDistance*100).toFixed(1)
+ : 'Not available';
  const reconciliation= !odoValid
   ? 'Opening or closing odometer reading missing or invalid'
   : odoDifference===0
