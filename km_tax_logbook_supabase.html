@@ -631,6 +631,16 @@ function printComplianceReport(){
  <h2>Business use: ${percentage}%</h2>
  </div>
 
+<h3>Odometer Reconciliation</h3>
+<div class="summary">
+ <p><b>Opening odometer:</b> ${odoStart.toLocaleString()} km</p>
+ <p><b>Closing odometer:</b> ${odoEnd.toLocaleString()} km</p>
+ <p><b>Actual kilometres travelled:</b> ${odoValid ? odoDistance.toLocaleString() : 'Not available'} km</p>
+ <p><b>Recorded trip kilometres:</b> ${totalKm.toLocaleString()} km</p>
+ <p><b>Difference:</b> ${odoValid ? odoDifference.toLocaleString() : 'Not available'} km</p>
+ <p><b>Reconciliation result:</b> ${esc(reconciliation)}</p>
+</div>
+
  <h3>Trip Records</h3>
  <table>
  <thead><tr>
