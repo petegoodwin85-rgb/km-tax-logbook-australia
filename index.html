@@ -1,0 +1,707 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>KM Tax Logbook Australia</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{--navy:#14243a;--gold:#d6ad52;--bg:#f3f5f8;--card:#fff;--muted:#667085;--line:#e3e7ed}
+*{box-sizing:border-box}
+body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:#172033}
+header{background:var(--navy);color:white;padding:22px 16px 18px;border-bottom:4px solid var(--gold)}
+header .wrap,main{max-width:1050px;margin:auto}
+h1{font-size:25px;margin:0 0 5px}
+header p{margin:0;color:#dbe2ec;font-size:14px}
+main{padding:16px;display:grid;gap:14px}
+.tabs{display:flex;gap:8px;flex-wrap:wrap;margin-top:4px}
+.tab{border:1px solid var(--line);background:white;padding:10px 14px;border-radius:10px;font-weight:650;color:var(--navy)}
+.tab.active{background:var(--navy);color:white}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;box-shadow:0 2px 8px #14243a0a}
+.card h2{font-size:18px;margin:0 0 13px}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.stat{background:#f8f9fb;border-radius:10px;padding:13px}
+.stat small{display:block;color:var(--muted);font-size:12px}
+.stat strong{font-size:22px;display:block;margin-top:4px;overflow-wrap:anywhere}
+form .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.field{display:flex;flex-direction:column;gap:5px}
+.field.full{grid-column:1/-1}
+label{font-size:13px;font-weight:650;color:#344054}
+input,select,textarea{font:inherit;border:1px solid #cbd3df;border-radius:9px;padding:11px;background:white;width:100%;min-width:0}
+textarea{min-height:75px;resize:vertical}
+.hint{font-size:12px;color:var(--muted)}
+button,.btn{font:inherit;border:0;border-radius:9px;padding:11px 14px;background:var(--navy);color:white;font-weight:650;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;gap:6px}
+.gold{background:var(--gold);color:#1c2634}
+.secondary{background:#edf1f6;color:var(--navy)}
+.danger{background:#fff0f0;color:#a32020}
+.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:13px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{text-align:left;padding:10px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:12px;color:var(--muted)}
+.tablewrap{overflow-x:auto}
+.empty{padding:20px;text-align:center;color:var(--muted)}
+.hidden{display:none!important}
+.notice{background:#fff8e6;border:1px solid #f0d99c;border-radius:10px;padding:12px;font-size:13px}
+footer{color:var(--muted);font-size:12px;padding:0 16px 25px;max-width:1050px;margin:auto}
+#authCard{max-width:700px;width:100%;margin:20px auto}
+button:disabled{opacity:.6;cursor:wait}
+@media(max-width:620px){.stats{grid-template-columns:1fr 1fr}.stats .stat:last-child{grid-column:1/-1}form .grid{grid-template-columns:1fr}.field.full{grid-column:auto}main{padding:10px}.card{padding:13px}h1{font-size:22px}}
+@media print{header,.tabs,.no-print,button,.actions,footer{display:none!important}body{background:white}main{display:block;padding:0}.card{box-shadow:none;border:0;page-break-inside:avoid}}
+</style>
+</head>
+<body>
+<header><div class="wrap"><h1>🚗 KM Tax Logbook Australia</h1><p>Australian work & business kilometres · Secure customer accounts and cloud records</p></div></header>
+<main>
+<section id="authCard" class="card">
+<h2 id="authHeading">Customer login</h2>
+<p class="hint">Sign in to access your logbook from your devices. New customers can create an account below.</p>
+<form id="authForm"><div class="grid">
+<div class="field"><label for="authEmail">Email address</label><input id="authEmail" type="email" autocomplete="email" required></div>
+<div class="field"><label for="authPassword">Password</label><input id="authPassword" type="password" autocomplete="current-password" minlength="8" required></div>
+</div><div id="authMessage" class="hint" style="margin-top:10px" role="status"></div>
+<div class="actions"><button class="gold" id="authSubmit" type="submit">Log in</button><button class="secondary" type="button" id="toggleAuth">Create account</button></div></form>
+</section>
+<div id="appArea" class="hidden">
+<div class="actions no-print" style="justify-content:flex-end;margin:0"><span id="signedInAs" class="hint"></span><button class="secondary" id="signOutBtn" type="button">Log out</button></div>
+<div class="tabs no-print">
+<button class="tab active" data-tab="dashboard">Overview</button><button class="tab" data-tab="trip">Log a trip</button><button class="tab" data-tab="records">Trip records</button><button class="tab" data-tab="vehicle">Vehicle & logbook</button>
+</div>
+<section id="dashboard" class="page">
+<div class="stats">
+<div class="stat"><small>Business / work km logged</small><strong id="totalBusiness">0 km</strong></div>
+<div class="stat"><small>Private km logged</small><strong id="totalPrivate">0 km</strong></div>
+<div class="stat"><small>Trips recorded</small><strong id="tripCount">0</strong></div>
+</div>
+<div class="card" style="margin-top:14px"><h2>Current logbook summary</h2><div class="stats">
+<div class="stat"><small>Business-use % (logged trips)</small><strong id="businessPct">—</strong></div>
+<div class="stat"><small>Logbook period</small><strong id="periodStatus" style="font-size:16px">Not set</strong></div>
+<div class="stat"><small>Latest odometer</small><strong id="latestOdo">—</strong></div>
+</div><div class="actions no-print"><button class="gold" onclick="showTab('trip')">＋ Record a trip</button><button class="secondary" onclick="showTab('vehicle')">Set up vehicle</button><button class="secondary" onclick="exportCSV()">Export CSV</button></div></div>
+
+<div class="card" style="margin-top:14px">
+  <h2>ATO Logbook Compliance Checks</h2>
+  <div id="complianceStatus" class="notice">
+    Compliance checks will appear here.
+  </div>
+  <div style="margin-top:12px">
+    <p><b>Logbook period:</b> <span id="checkPeriod">Not checked</span></p>
+    <p><b>Odometer readings:</b> <span id="checkOdo">Not checked</span></p>
+    <p><b>Trip information:</b> <span id="checkTrips">Not checked</span></p>
+    <p><b>Financial year:</b> <span id="checkYear">Not checked</span></p>
+    <p><b>Business-use calculation:</b> <span id="checkBusiness">Not checked</span></p>
+  </div>
+  <div class="actions no-print">
+    <button class="gold" onclick="runComplianceChecks()">Run compliance checks</button>
+    <button class="secondary" onclick="printComplianceReport()">Print compliance report</button>
+  </div>
+</div>
+ <div class="notice" style="margin-top:14px"><b>Remember:</b> Record each trip as soon as possible and use a specific purpose, such as “Travel to client site for property inspection” rather than just “work”. Ordinary home-to-work commuting is generally private, unless an exception applies.</div>
+</section>
+<section id="trip" class="page hidden">
+<div class="card"><h2 id="tripHeading">Record a trip</h2>
+<form id="tripForm"><div class="grid">
+<div class="field"><label for="date">Trip date</label><input id="date" type="date" required></div>
+<div class="field"><label for="type">Trip type</label><select id="type"><option value="Business">Business / work</option><option value="Private">Private</option></select></div>
+<div class="field"><label for="startOdo">Starting odometer (km)</label><input id="startOdo" type="number" min="0" step="0.1" required placeholder="e.g. 82540"></div>
+<div class="field"><label for="endOdo">Ending odometer (km)</label><input id="endOdo" type="number" min="0" step="0.1" required placeholder="e.g. 82612"></div>
+<div class="field"><label for="from">Trip started at</label><input id="from" placeholder="e.g. Home / workshop"></div>
+<div class="field"><label for="to">Destination</label><input id="to" placeholder="e.g. Client address / supplier"></div>
+<div class="field full"><label for="purpose">Reason / purpose of trip</label><textarea id="purpose" required placeholder="Describe the work-related reason clearly"></textarea><span class="hint">For work trips, be specific enough to explain how the travel relates to earning income.</span></div>
+</div><div id="tripError" class="hint" style="color:#b42318;margin-top:8px" role="status"></div>
+<div class="actions"><button class="gold" id="tripSubmit" type="submit">Save trip</button><button class="secondary" type="button" onclick="resetTrip()">Clear form</button><button class="secondary hidden" id="cancelEdit" type="button" onclick="cancelEdit()">Cancel edit</button></div></form></div>
+</section>
+<section id="records" class="page hidden">
+<div class="card"><h2>Trip records</h2><div class="actions no-print" style="margin:0 0 12px"><input id="search" placeholder="Search destination, purpose or type" oninput="render()" style="max-width:340px"><button class="secondary" onclick="exportCSV()">Export CSV</button><button class="secondary" onclick="window.print()">Print / Save PDF</button></div>
+<div class="tablewrap"><table><thead><tr><th>Date</th><th>Type</th><th>Route & purpose</th><th>Odometer</th><th>KM</th><th class="no-print">Action</th></tr></thead><tbody id="tripRows"></tbody></table></div>
+<div id="emptyRecords" class="empty">No trips yet. Add your first trip to get started.</div></div>
+</section>
+<section id="vehicle" class="page hidden">
+<div class="card"><h2>Vehicle details</h2><form id="vehicleForm"><div class="grid">
+<div class="field"><label for="driver">Driver / taxpayer name (optional)</label><input id="driver"></div>
+<div class="field"><label for="make">Make</label><input id="make" placeholder="e.g. Toyota"></div>
+<div class="field"><label for="model">Model</label><input id="model" placeholder="e.g. Hilux"></div>
+<div class="field"><label for="rego">Registration</label><input id="rego"></div>
+<div class="field"><label for="engine">Engine capacity (optional)</label><input id="engine" placeholder="e.g. 2.8L diesel"></div>
+<div class="field"><label for="logStart">Logbook period start</label><input id="logStart" type="date"></div>
+<div class="field"><label for="logEnd">Logbook period end</label><input id="logEnd" type="date"></div>
+<div class="field"><label for="periodStartOdo">Odometer at period start (km)</label><input id="periodStartOdo" type="number" min="0" step="0.1"></div>
+<div class="field"><label for="periodEndOdo">Odometer at period end (km)</label><input id="periodEndOdo" type="number" min="0" step="0.1"></div>
+<div class="field"><label for="yearStartOdo">Financial year opening odometer (km)</label><input id="yearStartOdo" type="number" min="0" step="0.1"></div>
+<div class="field"><label for="yearEndOdo">Financial year closing odometer (km)</label><input id="yearEndOdo" type="number" min="0" step="0.1"></div>
+</div><div class="actions"><button class="gold" type="submit">Save vehicle details</button></div></form>
+<p class="hint">Australian financial year: 1 July to 30 June. Keep opening and closing odometer records for each income year.</p></div>
+<div class="card"><h2>Backup & data</h2><p class="hint">Your records are saved to your signed-in account in the cloud. Export a CSV regularly and keep a separate copy somewhere safe.</p><div class="actions"><button class="secondary" onclick="exportBackup()">Download full backup</button><button class="danger" onclick="clearAll()">Delete all trip records</button></div></div>
+</section>
+</div>
+</main>
+<footer>Record-keeping helper only, not tax or legal advice. Check your circumstances and current ATO guidance. Your logbook records are stored in your Supabase account and protected by account-level database policies.</footer>
+<script>
+const SUPABASE_URL='https://qtuolmttcmvorlfwjwxy.supabase.co';
+const SUPABASE_PUBLISHABLE_KEY='sb_publishable_IpFQgqmWkFJg3dvRSculeA_j2lDMz1p';
+const db=window.supabase.createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY);
+let state={trips:[],vehicle:{},vehicleId:null};
+let currentUser=null;
+let authMode='login';
+let editingTripId=null;
+
+function val(id){return document.getElementById(id).value}
+function setVal(id,v){document.getElementById(id).value=v??''}
+function km(t){return Number(t.end)-Number(t.start)}
+function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function showMessage(id,msg,isError=false){const el=document.getElementById(id);el.textContent=msg;el.style.color=isError?'#b42318':'#18794e'}
+
+function showTab(name){
+ document.querySelectorAll('.page').forEach(x=>x.classList.toggle('hidden',x.id!==name));
+ document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('active',x.dataset.tab===name));
+ if(name==='trip'&&!val('date'))setVal('date',new Date().toISOString().slice(0,10));
+ window.scrollTo({top:0,behavior:'smooth'});
+}
+document.querySelectorAll('.tab').forEach(b=>b.addEventListener('click',()=>showTab(b.dataset.tab)));
+
+function setSignedInUI(user){
+ currentUser=user;
+ document.getElementById('authCard').classList.toggle('hidden',!!user);
+ document.getElementById('appArea').classList.toggle('hidden',!user);
+ document.getElementById('signedInAs').textContent=user?'Signed in: '+user.email:'';
+}
+function updateAuthMode(){
+ document.getElementById('authHeading').textContent=authMode==='login'?'Customer login':'Create your account';
+ document.getElementById('authSubmit').textContent=authMode==='login'?'Log in':'Create account';
+ document.getElementById('toggleAuth').textContent=authMode==='login'?'Create account':'Back to login';
+ document.getElementById('authPassword').autocomplete=authMode==='login'?'current-password':'new-password';
+ showMessage('authMessage','');
+}
+document.getElementById('toggleAuth').addEventListener('click',()=>{authMode=authMode==='login'?'signup':'login';updateAuthMode()});
+
+document.getElementById('authForm').addEventListener('submit',async e=>{
+ e.preventDefault();
+ const email=val('authEmail').trim(),password=val('authPassword'),btn=document.getElementById('authSubmit');
+ btn.disabled=true;showMessage('authMessage','Please wait…');
+ try{
+  if(authMode==='signup'){
+   const {data,error}=await db.auth.signUp({email,password,options:{emailRedirectTo:location.origin+location.pathname}});
+   if(error)throw error;
+   if(data.session)await activateUser(data.session.user);
+   else showMessage('authMessage','Account created. Check your email and confirm your address, then return here and log in.');
+  }else{
+   const {data,error}=await db.auth.signInWithPassword({email,password});
+   if(error)throw error;
+   await activateUser(data.user);
+  }
+ }catch(err){showMessage('authMessage',err.message||'Unable to complete sign-in.',true)}
+ finally{btn.disabled=false}
+});
+document.getElementById('signOutBtn').addEventListener('click',async()=>{
+ await db.auth.signOut();
+ state={trips:[],vehicle:{},vehicleId:null};
+ setSignedInUI(null);
+ showMessage('authMessage','You have been logged out.');
+});
+
+async function activateUser(user){setSignedInUI(user);await loadCloudData()}
+
+async function loadCloudData(){
+ const [tripsRes,vehicleRes]=await Promise.all([
+  db.from('trips').select('*').order('trip_date',{ascending:false}),
+  db.from('vehicles').select('*').order('created_at',{ascending:false}).limit(1)
+ ]);
+ if(tripsRes.error||vehicleRes.error){
+  alert('Could not load your cloud records: '+(tripsRes.error||vehicleRes.error).message);
+  return;
+ }
+ state.trips=(tripsRes.data||[]).map(t=>({
+  id:t.id,date:t.trip_date,type:t.trip_type||'Business',
+  start:t.start_odometer,end:t.end_odometer,
+  from:t.start_location,to:t.end_location,purpose:t.purpose
+ }));
+ const v=(vehicleRes.data||[])[0];
+ state.vehicleId=v?.id||null;
+ state.vehicle=v?{
+  driver:v.driver,make:v.make,model:v.model,rego:v.registration,
+  engine:v.engine_capacity,logStart:v.logbook_start,logEnd:v.logbook_end,
+  periodStartOdo:v.period_start_odometer,periodEndOdo:v.period_end_odometer,
+  yearStartOdo:v.financial_year_start_odometer,yearEndOdo:v.financial_year_end_odometer
+ }:{};
+ fillVehicle();
+ render();
+}
+
+function render(){
+ const biz=state.trips.filter(t=>t.type==='Business').reduce((a,t)=>a+km(t),0);
+ const priv=state.trips.filter(t=>t.type==='Private').reduce((a,t)=>a+km(t),0);
+ const all=biz+priv;
+ document.getElementById('totalBusiness').textContent=biz.toLocaleString()+' km';
+ document.getElementById('totalPrivate').textContent=priv.toLocaleString()+' km';
+ document.getElementById('tripCount').textContent=state.trips.length;
+ document.getElementById('businessPct').textContent=all?((biz/all)*100).toFixed(1)+'%':'—';
+
+ const v=state.vehicle||{};
+ document.getElementById('periodStatus').textContent=v.logStart&&v.logEnd?`${v.logStart} → ${v.logEnd}`:'Not set';
+ const latest=state.trips.slice().sort((a,b)=>b.date.localeCompare(a.date))[0];
+ document.getElementById('latestOdo').textContent=latest?Number(latest.end).toLocaleString()+' km':'—';
+
+ const q=(document.getElementById('search')?.value||'').toLowerCase();
+ const ts=state.trips.slice().sort((a,b)=>b.date.localeCompare(a.date))
+  .filter(t=>[t.date,t.type,t.from,t.to,t.purpose].join(' ').toLowerCase().includes(q));
+
+ document.getElementById('tripRows').innerHTML=ts.map(t=>`
+ <tr>
+  <td>${esc(t.date)}</td>
+  <td>${esc(t.type)}</td>
+  <td><b>${esc(t.from||'—')} → ${esc(t.to||'—')}</b><br>${esc(t.purpose)}</td>
+  <td>${Number(t.start).toLocaleString()} → ${Number(t.end).toLocaleString()}</td>
+  <td>${km(t).toLocaleString()} km</td>
+  <td class="no-print">
+   <button class="secondary" onclick="editTrip('${String(t.id).replace(/'/g,"\\'")}')">Edit</button>
+   <button class="danger" onclick="deleteTrip('${String(t.id).replace(/'/g,"\\'")}')">Delete</button>
+  </td>
+ </tr>`).join('');
+ document.getElementById('emptyRecords').classList.toggle('hidden',ts.length>0);
+}
+
+function resetTrip(){
+ editingTripId=null;
+ document.getElementById('tripForm').reset();
+ setVal('date',new Date().toISOString().slice(0,10));
+ document.getElementById('tripError').textContent='';
+ document.getElementById('tripHeading').textContent='Record a trip';
+ document.getElementById('tripSubmit').textContent='Save trip';
+ document.getElementById('cancelEdit').classList.add('hidden');
+}
+function cancelEdit(){resetTrip();showTab('records')}
+
+function editTrip(id){
+ const t=state.trips.find(x=>String(x.id)===String(id));
+ if(!t){alert('Trip not found. Refresh your records and try again.');return}
+ editingTripId=t.id;
+ setVal('date',t.date);
+ setVal('type',t.type);
+ setVal('startOdo',t.start);
+ setVal('endOdo',t.end);
+ setVal('from',t.from);
+ setVal('to',t.to);
+ setVal('purpose',t.purpose);
+ document.getElementById('tripHeading').textContent='Edit trip';
+ document.getElementById('tripSubmit').textContent='Update trip';
+ document.getElementById('cancelEdit').classList.remove('hidden');
+ document.getElementById('tripError').textContent='';
+ showTab('trip');
+}
+
+document.getElementById('tripForm').addEventListener('submit',async e=>{
+ e.preventDefault();
+ if(!currentUser){alert('Please log in again.');return}
+ const start=Number(val('startOdo')),end=Number(val('endOdo'));
+ const err=document.getElementById('tripError');
+ const btn=document.getElementById('tripSubmit');
+ if(end<start){err.textContent='Ending odometer must be greater than or equal to the starting reading.';return}
+ if(!val('purpose').trim()){err.textContent='Please enter the reason for this trip.';return}
+ const record={
+  user_id:currentUser.id,
+  trip_date:val('date'),
+  trip_type:val('type'),
+  start_odometer:start,
+  end_odometer:end,
+  kilometres:end-start,
+  start_location:val('from').trim()||'Not entered',
+  end_location:val('to').trim()||'Not entered',
+  purpose:val('purpose').trim()
+ };
+ btn.disabled=true;
+ err.textContent=editingTripId?'Updating trip…':'Saving trip…';
+ try{
+  let result;
+  if(editingTripId){
+   result=await db.from('trips').update(record).eq('id',editingTripId).select().single();
+  }else{
+   result=await db.from('trips').insert(record).select().single();
+  }
+  if(result.error)throw result.error;
+  const d=result.data;
+  const updated={id:d.id,date:d.trip_date,type:d.trip_type,start:d.start_odometer,end:d.end_odometer,from:d.start_location,to:d.end_location,purpose:d.purpose};
+  if(editingTripId){
+   const index=state.trips.findIndex(t=>String(t.id)===String(editingTripId));
+   if(index>=0)state.trips[index]=updated;
+   else state.trips.unshift(updated);
+  }else{
+   state.trips.unshift(updated);
+  }
+  resetTrip();
+  render();
+  showTab('records');
+ }catch(error){
+  err.textContent='Could not save trip: '+(error.message||String(error));
+ }finally{
+  btn.disabled=false;
+ }
+});
+
+async function deleteTrip(id){
+ if(!confirm('Delete this trip record?'))return;
+ const {error}=await db.from('trips').delete().eq('id',id);
+ if(error){alert('Could not delete trip: '+error.message);return}
+ state.trips=state.trips.filter(t=>String(t.id)!==String(id));
+ render();
+}
+
+const vehicleFields=['driver','make','model','rego','engine','logStart','logEnd','periodStartOdo','periodEndOdo','yearStartOdo','yearEndOdo'];
+function numOrNull(id){return val(id)===''?null:Number(val(id))}
+function fillVehicle(){vehicleFields.forEach(k=>setVal(k,(state.vehicle||{})[k]));}
+
+document.getElementById('vehicleForm').addEventListener('submit',async e=>{
+ e.preventDefault();
+ if(!currentUser){alert('Please log in again.');return}
+ const v={
+  user_id:currentUser.id,
+  driver:val('driver'),make:val('make'),model:val('model'),
+  registration:val('rego'),engine_capacity:val('engine'),
+  logbook_start:val('logStart')||null,logbook_end:val('logEnd')||null,
+  period_start_odometer:numOrNull('periodStartOdo'),
+  period_end_odometer:numOrNull('periodEndOdo'),
+  financial_year_start_odometer:numOrNull('yearStartOdo'),
+  financial_year_end_odometer:numOrNull('yearEndOdo')
+ };
+ let result;
+ if(state.vehicleId)result=await db.from('vehicles').update(v).eq('id',state.vehicleId).select().single();
+ else result=await db.from('vehicles').insert(v).select().single();
+ if(result.error){alert('Could not save vehicle: '+result.error.message);return}
+ state.vehicleId=result.data.id;
+ state.vehicle={driver:v.driver,make:v.make,model:v.model,rego:v.registration,engine:v.engine_capacity,logStart:v.logbook_start,logEnd:v.logbook_end,periodStartOdo:v.period_start_odometer,periodEndOdo:v.period_end_odometer,yearStartOdo:v.financial_year_start_odometer,yearEndOdo:v.financial_year_end_odometer};
+ render();
+ alert('Vehicle details saved securely to your account.');
+});
+
+function csvCell(s){return '"'+String(s??'').replace(/"/g,'""')+'"'}
+function exportCSV(){
+ const rows=[['Date','Type','Start location','Destination','Purpose','Start odometer km','End odometer km','Distance km'],
+ ...state.trips.slice().sort((a,b)=>a.date.localeCompare(b.date)).map(t=>[t.date,t.type,t.from,t.to,t.purpose,t.start,t.end,km(t)])];
+ const csv=rows.map(r=>r.map(csvCell).join(',')).join('\r\n');
+ download('km-tax-logbook-trips.csv','text/csv;charset=utf-8','\ufeff'+csv);
+}
+function exportBackup(){
+ download('km-tax-logbook-backup.json','application/json',JSON.stringify(state,null,2));
+}
+function download(name,type,data){
+ const a=document.createElement('a');
+ const u=URL.createObjectURL(new Blob([data],{type}));
+ a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();
+ setTimeout(()=>URL.revokeObjectURL(u),1000);
+}
+async function clearAll(){
+ if(!confirm('Delete ALL your trip records from your account? This cannot be undone.'))return;
+ const {error}=await db.from('trips').delete().eq('user_id',currentUser.id);
+ if(error){alert('Could not delete records: '+error.message);return}
+ state.trips=[];
+ render();
+ alert('All trip records have been deleted.');
+}
+
+function runComplianceChecks(){
+
+ const v=state.vehicle||{};
+ const trips=state.trips||[];
+
+ const periodStart=v.logStart;
+ const periodEnd=v.logEnd;
+
+ const setCheck=(id,message)=>{
+  document.getElementById(id).textContent=message;
+ };
+
+ let warnings=0;
+
+ // 1. Logbook period
+ let periodTrips=[];
+
+ if(!periodStart||!periodEnd){
+  setCheck('checkPeriod','⚠️ Start and end dates required');
+  warnings++;
+ }else{
+  const start=new Date(periodStart+'T00:00:00Z');
+  const end=new Date(periodEnd+'T00:00:00Z');
+  const days=Math.round((end-start)/86400000);
+
+  if(days<0){
+   setCheck('checkPeriod','⚠️ End date is before start date');
+   warnings++;
+  }else{
+   periodTrips=trips.filter(t=>
+    t.date>=periodStart&&t.date<=periodEnd
+   );
+
+   if(days<84){
+    setCheck('checkPeriod','⚠️ Less than 12 weeks');
+    warnings++;
+   }else{
+    setCheck('checkPeriod','✓ At least 12 weeks ('+days+' days)');
+   }
+  }
+ }
+
+ // 2. Odometer readings
+ const startOdo=Number(v.periodStartOdo);
+ const endOdo=Number(v.periodEndOdo);
+
+ if(v.periodStartOdo==null||v.periodStartOdo===''||
+    v.periodEndOdo==null||v.periodEndOdo===''){
+  setCheck('checkOdo','⚠️ Period odometer readings missing');
+  warnings++;
+ }else if(endOdo<startOdo){
+  setCheck('checkOdo','⚠️ Ending reading is lower than starting reading');
+  warnings++;
+ }else{
+  setCheck('checkOdo','✓ Readings are in increasing order');
+ }
+
+ // 3. Trip information
+ const incomplete=periodTrips.filter(t=>
+  !t.date||
+  !t.purpose||
+  !t.from||
+  !t.to||
+  t.start==null||
+  t.end==null||
+  Number(t.end)<Number(t.start)||
+  !['Business','Private'].includes(t.type)
+ );
+
+ if(periodTrips.length===0){
+  setCheck('checkTrips','⚠️ No trips recorded within the logbook period');
+  warnings++;
+ }else if(incomplete.length>0){
+  setCheck('checkTrips','⚠️ '+incomplete.length+' incomplete or incorrect trip(s)');
+  warnings++;
+ }else{
+  setCheck('checkTrips','✓ '+periodTrips.length+' trips recorded with required details');
+ }
+
+ // 4. Financial year readings
+ const fyStart=v.yearStartOdo;
+ const fyEnd=v.yearEndOdo;
+
+ if(fyStart==null||fyStart===''||
+    fyEnd==null||fyEnd===''){
+  setCheck('checkYear','⚠️ Opening or closing reading missing');
+  warnings++;
+ }else if(Number(fyEnd)<Number(fyStart)){
+  setCheck('checkYear','⚠️ Closing reading is lower than opening');
+  warnings++;
+ }else{
+  setCheck('checkYear','✓ Financial year readings are in order');
+ }
+
+ // 5. Business-use calculation
+ const business=periodTrips
+  .filter(t=>t.type==='Business')
+  .reduce((sum,t)=>sum+km(t),0);
+
+ const privateKm=periodTrips
+  .filter(t=>t.type==='Private')
+  .reduce((sum,t)=>sum+km(t),0);
+
+ const total=business+privateKm;
+
+ if(total===0){
+  setCheck('checkBusiness','⚠️ No kilometres available to calculate');
+  warnings++;
+ }else{
+  setCheck('checkBusiness',
+   (business/total*100).toFixed(1)+'% business use ('+
+   business.toLocaleString()+' business km / '+
+   total.toLocaleString()+' total km)'
+  );
+ }
+
+ // Overall status
+ const status=document.getElementById('complianceStatus');
+
+ if(warnings===0){
+  status.textContent='✓ All preliminary record checks passed. This is not ATO approval or a guarantee of deductibility.';
+ }else{
+  status.textContent='⚠️ '+warnings+' item(s) need attention. Review the checks below.';
+ }
+}
+
+
+function printComplianceReport(){
+
+ runComplianceChecks();
+
+ const v=state.vehicle||{};
+ const trips=state.trips||[];
+
+ const esc=value=>String(value??'').replace(/[&<>"']/g,c=>({
+  '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+ }[c]));
+
+ const businessTrips=trips.filter(t=>
+  t.type==='Business'&&t.date>=v.logStart&&t.date<=v.logEnd
+ );
+
+ const privateTrips=trips.filter(t=>
+  t.type==='Private'&&t.date>=v.logStart&&t.date<=v.logEnd
+ );
+
+ const periodTrips=[...businessTrips,...privateTrips]
+  .sort((a,b)=>a.date.localeCompare(b.date));
+
+ const businessKm=businessTrips.reduce((s,t)=>s+km(t),0);
+ const privateKm=privateTrips.reduce((s,t)=>s+km(t),0);
+ const totalKm=businessKm+privateKm;
+ const percentage=totalKm?(businessKm/totalKm*100).toFixed(1):'0.0';
+
+ const odoStart=Number(v.periodStartOdo);
+ const odoEnd=Number(v.periodEndOdo);
+
+ const odoValid=
+  v.periodStartOdo!==''&&v.periodStartOdo!=null&&
+  v.periodEndOdo!==''&&v.periodEndOdo!=null&&
+  Number.isFinite(odoStart)&&Number.isFinite(odoEnd)&&
+  odoEnd>=odoStart;
+
+ const odoDistance=odoValid?odoEnd-odoStart:0;
+ const odoDifference=odoValid?odoDistance-totalKm:0;
+const reconciliationCoverage=odoValid&&odoDistance>0
+ ? (totalKm/odoDistance*100).toFixed(1)
+ : 'Not available';
+
+const unaccountedPercentage=odoValid&&odoDistance>0
+ ? (odoDifference/odoDistance*100).toFixed(1)
+ : 'Not available';
+ const reconciliation= !odoValid
+  ? 'Opening or closing odometer reading missing or invalid'
+  : odoDifference===0
+   ? '✓ Odometer readings match recorded trips'
+   : odoDifference>0
+    ? '⚠️ '+odoDifference.toLocaleString()+' km not accounted for in trip records'
+    : '⚠️ Recorded trips exceed odometer distance by '+Math.abs(odoDifference).toLocaleString()+' km';
+
+ const rows=periodTrips.map(t=>`
+  <tr>
+   <td>${esc(t.date)}</td>
+   <td>${esc(t.type)}</td>
+   <td>${esc(t.from)}</td>
+   <td>${esc(t.to)}</td>
+   <td>${esc(t.purpose)}</td>
+   <td>${Number(km(t)).toLocaleString()}</td>
+  </tr>
+ `).join('');
+
+ const report=window.open('','_blank');
+
+ if(!report){
+  alert('Please allow pop-ups for this website to print your report.');
+  return;
+ }
+
+ report.document.write(`
+ <!DOCTYPE html>
+ <html>
+ <head>
+ <title>KM Tax Logbook Report</title>
+ <style>
+ body{font-family:Arial,sans-serif;color:#222;margin:30px}
+ h1,h2{color:#14243a}
+ h1{border-bottom:3px solid #d4af37;padding-bottom:12px}
+ table{width:100%;border-collapse:collapse;margin-top:15px}
+ th,td{border:1px solid #ccc;padding:8px;text-align:left;font-size:12px}
+ th{background:#14243a;color:white}
+ .summary{background:#f2f2f2;padding:15px;margin:15px 0}
+ .signature{margin-top:50px}
+ .line{border-bottom:1px solid #222;width:300px;margin-top:35px}
+ .note{font-size:11px;color:#555;margin-top:30px}
+ @media print{body{margin:15mm}}
+ </style>
+ </head>
+ <body>
+ <h1>KM Tax Logbook Australia</h1>
+ <h2>Vehicle Logbook Report</h2>
+
+ <h3>Driver and Vehicle Details</h3>
+ <p><b>Driver:</b> ${esc(v.driver)}</p>
+ <p><b>Make:</b> ${esc(v.make)}</p>
+ <p><b>Model:</b> ${esc(v.model)}</p>
+ <p><b>Registration:</b> ${esc(v.registration)}</p>
+
+ <h3>Logbook Period and Odometer</h3>
+ <p><b>Start date:</b> ${esc(v.logStart)}</p>
+ <p><b>End date:</b> ${esc(v.logEnd)}</p>
+ <p><b>Starting odometer:</b> ${esc(v.periodStartOdo)} km</p>
+ <p><b>Ending odometer:</b> ${esc(v.periodEndOdo)} km</p>
+
+ <h3>Kilometre Summary</h3>
+ <div class="summary">
+ <p><b>Business kilometres:</b> ${businessKm.toLocaleString()} km</p>
+ <p><b>Private kilometres:</b> ${privateKm.toLocaleString()} km</p>
+ <p><b>Total recorded kilometres:</b> ${totalKm.toLocaleString()} km</p>
+ <h2>Business use: ${percentage}%</h2>
+ </div>
+
+<h3>Odometer Reconciliation</h3>
+<div class="summary">
+ <p><b>Opening odometer:</b> ${odoStart.toLocaleString()} km</p>
+ <p><b>Closing odometer:</b> ${odoEnd.toLocaleString()} km</p>
+ <p><b>Actual kilometres travelled:</b> ${odoValid ? odoDistance.toLocaleString() : 'Not available'} km</p>
+ <p><b>Recorded trip kilometres:</b> ${totalKm.toLocaleString()} km</p>
+ <p><b>Difference:</b> ${odoValid ? odoDifference.toLocaleString() : 'Not available'} km</p>
+ <p><b>Reconciliation result:</b> ${esc(reconciliation)}</p>
+</div>
+
+ <h3>Trip Records</h3>
+ <table>
+ <thead><tr>
+ <th>Date</th><th>Type</th><th>From</th><th>To</th>
+ <th>Purpose</th><th>KM</th>
+ </tr></thead>
+ <tbody>${rows||'<tr><td colspan="6">No trips recorded</td></tr>'}</tbody>
+ </table>
+
+ <h3>Financial Year Odometer Readings</h3>
+ <p><b>Opening reading:</b> ${esc(v.yearStartOdo)} km</p>
+ <p><b>Closing reading:</b> ${esc(v.yearEndOdo)} km</p>
+
+ <h3>Driver Declaration</h3>
+ <p>I declare that the information in this report is true and accurate
+ to the best of my knowledge.</p>
+
+ <div class="signature">
+ <p>Driver signature:</p><div class="line"></div>
+ <p>Date:</p><div class="line"></div>
+ </div>
+
+ <p class="note">
+ This report is generated from information entered into KM Tax Logbook
+ Australia. It is not ATO approval or a guarantee of deductibility.
+ The driver is responsible for ensuring records meet applicable ATO
+ requirements.
+ </p>
+
+ <script>
+ window.onload=function(){window.print();}
+ <\/script>
+ </body>
+ </html>
+ `);
+
+ report.document.close();
+}
+
+
+async function init(){
+ const {data:{session}}=await db.auth.getSession();
+ if(session)await activateUser(session.user);
+ else setSignedInUI(null);
+ db.auth.onAuthStateChange((_event,session)=>{
+  if(session&&!currentUser)activateUser(session.user);
+  else if(!session&&currentUser){
+   currentUser=null;
+   state={trips:[],vehicle:{},vehicleId:null};
+   setSignedInUI(null);
+  }
+ });
+ setVal('date',new Date().toISOString().slice(0,10));
+}
+init();
+</script>
+</body>
+</html>
