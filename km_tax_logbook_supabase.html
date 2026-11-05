@@ -550,6 +550,26 @@ function printComplianceReport(){
  const totalKm=businessKm+privateKm;
  const percentage=totalKm?(businessKm/totalKm*100).toFixed(1):'0.0';
 
+ const odoStart=Number(v.periodStartOdo);
+ const odoEnd=Number(v.periodEndOdo);
+
+ const odoValid=
+  v.periodStartOdo!==''&&v.periodStartOdo!=null&&
+  v.periodEndOdo!==''&&v.periodEndOdo!=null&&
+  Number.isFinite(odoStart)&&Number.isFinite(odoEnd)&&
+  odoEnd>=odoStart;
+
+ const odoDistance=odoValid?odoEnd-odoStart:0;
+ const odoDifference=odoValid?odoDistance-totalKm:0;
+
+ const reconciliation= !odoValid
+  ? 'Opening or closing odometer reading missing or invalid'
+  : odoDifference===0
+   ? '✓ Odometer readings match recorded trips'
+   : odoDifference>0
+    ? '⚠️ '+odoDifference.toLocaleString()+' km not accounted for in trip records'
+    : '⚠️ Recorded trips exceed odometer distance by '+Math.abs(odoDifference).toLocaleString()+' km';
+
  const rows=periodTrips.map(t=>`
   <tr>
    <td>${esc(t.date)}</td>
