@@ -76,6 +76,7 @@ button:disabled{opacity:.6;cursor:wait}
 <div class="stat"><small>Business-use % (logged trips)</small><strong id="businessPct">—</strong></div>
 <div class="stat"><small>Logbook period</small><strong id="periodStatus" style="font-size:16px">Not set</strong></div>
 <div class="stat"><small>Latest odometer</small><strong id="latestOdo">—</strong></div>
+  <div class="stat"><small>Total kilometres travelled</small><strong id="totalKm">—</strong></div>
 </div><div class="actions no-print"><button class="gold" onclick="showTab('trip')">＋ Record a trip</button><button class="secondary" onclick="showTab('vehicle')">Set up vehicle</button><button class="secondary" onclick="exportCSV()">Export CSV</button></div></div>
 
 <div class="card" style="margin-top:14px">
@@ -237,6 +238,11 @@ function render(){
 
  const v=state.vehicle||{};
  document.getElementById('periodStatus').textContent=v.logStart&&v.logEnd?`${v.logStart} → ${v.logEnd}`:'Not set';
+  const totalKm = Number(v.periodEndOdo) - Number(v.periodStartOdo);
+document.getElementById('totalKm').textContent =
+ v.periodStartOdo !== '' && v.periodEndOdo !== ''
+ ? totalKm.toLocaleString() + ' km'
+ : 'Not set';
  const latest=state.trips.slice().sort((a,b)=>b.date.localeCompare(a.date))[0];
  document.getElementById('latestOdo').textContent=latest?Number(latest.end).toLocaleString()+' km':'—';
 
