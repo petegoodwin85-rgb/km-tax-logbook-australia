@@ -578,7 +578,33 @@ const unaccountedPercentage=odoValid&&odoDistance>0
    : odoDifference>0
     ? '⚠️ '+odoDifference.toLocaleString()+' km not accounted for in trip records'
     : '⚠️ Recorded trips exceed odometer distance by '+Math.abs(odoDifference).toLocaleString()+' km';
+const sortedTrips=[...periodTrips].sort((a,b)=>
+ new Date(a.date)-new Date(b.date)
+);
 
+let tripGaps=[];
+let previousTrip=null;
+
+sortedTrips.forEach(t=>{
+ if(previousTrip){
+  const gap=Number(t.start)-Number(previousTrip.end);
+
+  if(gap>0){
+   tripGaps.push({
+    date:t.date,
+    km:gap,
+    message:gap+' km between trips'
+   });
+  }else if(gap<0){
+   tripGaps.push({
+    date:t.date,
+    km:gap,
+    message:'⚠️ Odometer overlap of '+Math.abs(gap)+' km'
+   });
+  }
+ }
+ previousTrip=t;
+});
  const rows=periodTrips.map(t=>`
   <tr>
    <td>${esc(t.date)}</td>
@@ -651,7 +677,15 @@ const unaccountedPercentage=odoValid&&odoDistance>0
 <p><b>Unaccounted percentage:</b> ${unaccountedPercentage}%</p>
  <p><b>Reconciliation result:</b> ${esc(reconciliation)}</p>
 </div>
-
+<h3>Individual Trip Reconciliation</h3>
+<div class="summary">
+ ${tripGaps.length===0
+  ? '<p>✓ No gaps or overlaps found between consecutive trips.</p>'
+  : tripGaps.map(g=>`
+    <p>${esc(g.date)} – ${esc(g.message)}</p>
+   `).join('')
+ }
+</div>
  <h3>Trip Records</h3>
  <table>
  <thead><tr>
