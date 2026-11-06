@@ -604,6 +604,16 @@ sortedTrips.forEach(t=>{
   }
  }
  previousTrip=t;
+  const firstTrip=sortedTrips[0];
+const lastTrip=sortedTrips[sortedTrips.length-1];
+
+const openingGap=firstTrip
+ ? Number(firstTrip.start)-odoStart
+ : null;
+
+const closingGap=lastTrip
+ ? odoEnd-Number(lastTrip.end)
+ : null;
 });
  const rows=periodTrips.map(t=>`
   <tr>
@@ -678,6 +688,13 @@ sortedTrips.forEach(t=>{
  <p><b>Reconciliation result:</b> ${esc(reconciliation)}</p>
 </div>
 <h3>Individual Trip Reconciliation</h3>
+<p><b>Opening odometer gap:</b>
+${openingGap===null?'No trips recorded':openingGap.toLocaleString()+' km'}
+</p>
+
+<p><b>Closing odometer gap:</b>
+${closingGap===null?'No trips recorded':closingGap.toLocaleString()+' km'}
+</p>
 <div class="summary">
  ${tripGaps.length===0
   ? '<p>✓ No gaps or overlaps found between consecutive trips.</p>'
