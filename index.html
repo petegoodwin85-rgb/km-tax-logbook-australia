@@ -568,6 +568,13 @@ const reconciliationCoverage=odoValid&&odoDistance>0
 const unaccountedPercentage=odoValid&&odoDistance>0
  ? (odoDifference/odoDistance*100).toFixed(1)
  : 'Not available';
+  const reconciliationCoverage=odoValid&&odoDistance>0
+ ? (totalKm/odoDistance*100).toFixed(1)
+ : 'Not available';
+
+const unaccountedPercentage=odoValid&&odoDistance>0
+ ? (odoDifference/odoDistance*100).toFixed(1)
+ : 'Not available';
  const reconciliation= !odoValid
   ? 'Opening or closing odometer reading missing or invalid'
   : odoDifference===0
@@ -644,6 +651,8 @@ const unaccountedPercentage=odoValid&&odoDistance>0
  <p><b>Actual kilometres travelled:</b> ${odoValid ? odoDistance.toLocaleString() : 'Not available'} km</p>
  <p><b>Recorded trip kilometres:</b> ${totalKm.toLocaleString()} km</p>
  <p><b>Difference:</b> ${odoValid ? odoDifference.toLocaleString() : 'Not available'} km</p>
+ <p><b>Trip coverage:</b> ${reconciliationCoverage}%</p>
+<p><b>Unaccounted percentage:</b> ${unaccountedPercentage}%</p>
  <p><b>Reconciliation result:</b> ${esc(reconciliation)}</p>
 </div>
 
