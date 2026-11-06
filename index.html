@@ -131,6 +131,15 @@ button:disabled{opacity:.6;cursor:wait}
 <div class="field"><label for="yearEndOdo">Financial year closing odometer (km)</label><input id="yearEndOdo" type="number" min="0" step="0.1"></div>
 </div><div class="actions"><button class="gold" type="submit">Save vehicle details</button></div></form>
 <p class="hint">Australian financial year: 1 July to 30 June. Keep opening and closing odometer records for each income year.</p></div>
+  <div class="card">
+<h2>KM Tax Logbook Subscription</h2>
+<p class="hint">Subscribe to access your KM Tax Logbook.</p>
+<button class="primary" onclick="startSubscription()">
+Subscribe Now
+</button>
+<p id="subscriptionMessage" class="hint"></p>
+</div>
+
 <div class="card"><h2>Backup & data</h2><p class="hint">Your records are saved to your signed-in account in the cloud. Export a CSV regularly and keep a separate copy somewhere safe.</p><div class="actions"><button class="secondary" onclick="exportBackup()">Download full backup</button><button class="danger" onclick="clearAll()">Delete all trip records</button></div></div>
 </section>
 </div>
@@ -765,6 +774,39 @@ async function init(){
  setVal('date',new Date().toISOString().slice(0,10));
 }
 init();
+  
+async function startSubscription() {
+  const message = document.getElementById('subscriptionMessage');
+
+  if (!currentUser) {
+    message.textContent = 'Please log in before subscribing.';
+    return;
+  }
+
+  message.textContent = 'Connecting to secure payment...';
+
+  try {
+    const { data, error } = await db.functions.invoke(
+      'create-checkout',
+      {
+        body: {}
+      }
+    );
+
+    if (error) throw error;
+
+    if (!data || !data.url) {
+      throw new Error(data?.error || 'Unable to create checkout session.');
+    }
+
+    window.location.href = data.url;
+
+  } catch (err) {
+    console.error('Subscription error:', err);
+    message.textContent = err.message || 'Payment connection failed.';
+  }
+}
+
 </script>
 </body>
 </html>
