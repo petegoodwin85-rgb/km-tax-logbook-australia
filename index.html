@@ -604,6 +604,8 @@ sortedTrips.forEach(t=>{
   }
  }
  previousTrip=t;
+  
+});
   const firstTrip=sortedTrips[0];
 const lastTrip=sortedTrips[sortedTrips.length-1];
 
@@ -614,7 +616,6 @@ const openingGap=firstTrip
 const closingGap=lastTrip
  ? odoEnd-Number(lastTrip.end)
  : null;
-});
  const rows=periodTrips.map(t=>`
   <tr>
    <td>${esc(t.date)}</td>
