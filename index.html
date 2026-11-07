@@ -793,7 +793,17 @@ async function startSubscription() {
       }
     );
 
-    if (error) throw error;
+   if (error) {
+  let details = error.message;
+  try {
+    details = await error.context.json();
+  } catch (e) {}
+
+  console.error("CHECKOUT DETAILS:", details);
+  message.textContent = JSON.stringify(details);
+  return;
+}
+
 
     if (!data || !data.url) {
       throw new Error(data?.error || 'Unable to create checkout session.');
