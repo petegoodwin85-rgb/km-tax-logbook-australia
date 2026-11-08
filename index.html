@@ -249,6 +249,17 @@ async function loadCloudData(){
 
   document.getElementById('subscribeButton').textContent =
     isSubscribed ? 'Subscribed' : 'Subscribe Now';
+  // Restrict logbook sections to active subscribers
+document.querySelectorAll('.tabs .tab').forEach(tab => {
+  tab.disabled = !isSubscribed && tab.dataset.tab !== 'vehicle';
+});
+
+if (!isSubscribed) {
+  showTab('vehicle');
+} else {
+  showTab('dashboard');
+}
+
 
   document.getElementById('subscribeButton').disabled = isSubscribed;
 
