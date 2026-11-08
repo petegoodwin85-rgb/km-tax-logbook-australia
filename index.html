@@ -219,7 +219,17 @@ document.getElementById('signOutBtn').addEventListener('click',async()=>{
 async function activateUser(user){setSignedInUI(user);await loadCloudData()}
 
 async function loadCloudData(){
- const [tripsRes,vehicleRes]=await Promise.all([
+ const [tripsRes,vehicleRes,subscriptionRes]=await Promise.all([
+  db.from('trips').select('*').order('trip_date',{ascending:false}),
+  db.from('vehicles').select('*').order('created_at',{ascending:false}).limit(1),
+  db.from('subscriptions')
+    .select('status')
+    .eq('user_id',currentUser.id)
+    .order('created_at',{ascending:false})
+    .limit(1)
+    .maybeSingle()
+]);
+
   db.from('trips').select('*').order('trip_date',{ascending:false}),
   db.from('vehicles').select('*').order('created_at',{ascending:false}).limit(1)
  ]);
