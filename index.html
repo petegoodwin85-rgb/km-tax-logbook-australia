@@ -218,51 +218,58 @@ document.getElementById('signOutBtn').addEventListener('click',async()=>{
 
 async function activateUser(user){setSignedInUI(user);await loadCloudData()}
 
+
 async function loadCloudData(){
- const [tripsRes,vehicleRes,subscriptionRes]=await Promise.all([
-  db.from('trips').select('*').order('trip_date',{ascending:false}),
-  db.from('vehicles').select('*').order('created_at',{ascending:false}).limit(1),
-  db.from('subscriptions')
-    .select('status')
-    .eq('user_id',currentUser.id)
-    .order('created_at',{ascending:false})
-    .limit(1)
-    .maybeSingle()
-]);
 
-  db.from('trips').select('*').order('trip_date',{ascending:false}),
-  db.from('vehicles').select('*').order('created_at',{ascending:false}).limit(1)
- ]);
- const isSubscribed = !subscriptionRes.error &&
-  ['active','trialing'].includes(subscriptionRes.data?.status);
+  const [tripsRes,vehicleRes,subscriptionRes]=await Promise.all([
+    db.from('trips').select('*').order('trip_date',{ascending:false}),
+    db.from('vehicles').select('*').order('created_at',{ascending:false}).limit(1),
+    db.from('subscriptions')
+      .select('status')
+      .eq('user_id',currentUser.id)
+      .order('created_at',{ascending:false})
+      .limit(1)
+      .maybeSingle()
+  ]);
 
-document.getElementById('subscriptionStatus').textContent =
-  subscriptionRes.error
-    ? 'Could not check subscription: ' + subscriptionRes.error.message
-    : isSubscribed
-      ? 'Your subscription is active.'
-      : 'No active subscription found.';
+  if(tripsRes.error||vehicleRes.error){
+    alert('Could not load your cloud records: '+(tripsRes.error||vehicleRes.error).message);
+    return;
+  }
 
-document.getElementById('subscribeButton').textContent =
-  isSubscribed ? 'Subscribed' : 'Subscribe Now';
+  const isSubscribed = !subscriptionRes.error &&
+    ['active','trialing'].includes(subscriptionRes.data?.status);
 
-document.getElementById('subscribeButton').disabled = isSubscribed;
+  document.getElementById('subscriptionStatus').textContent =
+    subscriptionRes.error
+      ? 'Could not check subscription: '+subscriptionRes.error.message
+      : isSubscribed
+        ? 'Your subscription is active.'
+        : 'No active subscription found.';
 
- state.trips=(tripsRes.data||[]).map(t=>({
-  id:t.id,date:t.trip_date,type:t.trip_type||'Business',
-  start:t.start_odometer,end:t.end_odometer,
-  from:t.start_location,to:t.end_location,purpose:t.purpose
- }));
- const v=(vehicleRes.data||[])[0];
- state.vehicleId=v?.id||null;
- state.vehicle=v?{
-  driver:v.driver,make:v.make,model:v.model,rego:v.registration,
-  engine:v.engine_capacity,logStart:v.logbook_start,logEnd:v.logbook_end,
-  periodStartOdo:v.period_start_odometer,periodEndOdo:v.period_end_odometer,
-  yearStartOdo:v.financial_year_start_odometer,yearEndOdo:v.financial_year_end_odometer
- }:{};
- fillVehicle();
- render();
+  document.getElementById('subscribeButton').textContent =
+    isSubscribed ? 'Subscribed' : 'Subscribe Now';
+
+  document.getElementById('subscribeButton').disabled = isSubscribed;
+
+  state.trips=(tripsRes.data||[]).map(t=>({
+    id:t.id,date:t.trip_date,type:t.trip_type||'Business',
+    start:t.start_odometer,end:t.end_odometer,
+    from:t.start_location,to:t.end_location,purpose:t.purpose
+  }));
+
+  const v=(vehicleRes.data||[])[0];
+  state.vehicleId=v?.id||null;
+
+  state.vehicle=v?{
+    driver:v.driver,make:v.make,model:v.model,rego:v.registration,
+    engine:v.engine_capacity,logStart:v.logbook_start,logEnd:v.logbook_end,
+    periodStartOdo:v.period_start_odometer,periodEndOdo:v.period_end_odometer,
+    yearStartOdo:v.financial_year_start_odometer,yearEndOdo:v.financial_year_end_odometer
+  }:{};
+
+  fillVehicle();
+  render();
 }
 
 function render(){
