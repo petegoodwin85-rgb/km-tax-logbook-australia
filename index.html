@@ -233,10 +233,21 @@ async function loadCloudData(){
   db.from('trips').select('*').order('trip_date',{ascending:false}),
   db.from('vehicles').select('*').order('created_at',{ascending:false}).limit(1)
  ]);
- if(tripsRes.error||vehicleRes.error){
-  alert('Could not load your cloud records: '+(tripsRes.error||vehicleRes.error).message);
-  return;
- }
+ const isSubscribed = !subscriptionRes.error &&
+  ['active','trialing'].includes(subscriptionRes.data?.status);
+
+document.getElementById('subscriptionStatus').textContent =
+  subscriptionRes.error
+    ? 'Could not check subscription: ' + subscriptionRes.error.message
+    : isSubscribed
+      ? 'Your subscription is active.'
+      : 'No active subscription found.';
+
+document.getElementById('subscribeButton').textContent =
+  isSubscribed ? 'Subscribed' : 'Subscribe Now';
+
+document.getElementById('subscribeButton').disabled = isSubscribed;
+
  state.trips=(tripsRes.data||[]).map(t=>({
   id:t.id,date:t.trip_date,type:t.trip_type||'Business',
   start:t.start_odometer,end:t.end_odometer,
