@@ -70,7 +70,7 @@ button:disabled{opacity:.6;cursor:wait}
 <div class="stats">
 <div class="stat"><small>Business / work km logged</small><strong id="totalBusiness">0 km</strong></div>
 <div class="stat"><small>Private km logged</small><strong id="totalPrivate">0 km</strong></div>
-<div class="stat"><small>Trips recorded</small><strong id="tripCount">0</strong></div>
+="stat"><small>Trips recorded</small><strong id="tripCount">0</strong></div>
 </div>
 <div class="card" style="margin-top:14px"><h2>Current logbook summary</h2><div class="stats">
 <div class="stat"><small>Business-use % (logged trips)</small><strong id="businessPct">—</strong></div>
@@ -131,14 +131,22 @@ button:disabled{opacity:.6;cursor:wait}
 <div class="field"><label for="yearEndOdo">Financial year closing odometer (km)</label><input id="yearEndOdo" type="number" min="0" step="0.1"></div>
 </div><div class="actions"><button class="gold" type="submit">Save vehicle details</button></div></form>
 <p class="hint">Australian financial year: 1 July to 30 June. Keep opening and closing odometer records for each income year.</p></div>
-  <div class="card">
+ <div class="card">
+
 <h2>KM Tax Logbook Subscription</h2>
-<p class="hint">Subscribe to access your KM Tax Logbook.</p>
-<button class="primary" onclick="startSubscription()">
+
+<p id="subscriptionStatus" class="hint">Checking subscription...</p>
+
+<button id="subscribeButton" class="primary" onclick="startSubscription()">
+
 Subscribe Now
+
 </button>
+
 <p id="subscriptionMessage" class="hint"></p>
+
 </div>
+
 
 <div class="card"><h2>Backup & data</h2><p class="hint">Your records are saved to your signed-in account in the cloud. Export a CSV regularly and keep a separate copy somewhere safe.</p><div class="actions"><button class="secondary" onclick="exportBackup()">Download full backup</button><button class="danger" onclick="clearAll()">Delete all trip records</button></div></div>
 </section>
