@@ -834,7 +834,7 @@ async function startSubscription() {
 
   try {
     const { data, error } = await db.functions.invoke(
-      'CREATE-CHECKOUT',
+      'CREATE-CHECKOUT-live',
       {
         body: {}
       }
