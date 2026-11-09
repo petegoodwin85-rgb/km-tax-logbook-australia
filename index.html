@@ -224,12 +224,10 @@ async function loadCloudData(){
   const [tripsRes,vehicleRes,subscriptionRes]=await Promise.all([
     db.from('trips').select('*').order('trip_date',{ascending:false}),
     db.from('vehicles').select('*').order('created_at',{ascending:false}).limit(1),
-    db.from('subscriptions')
-      .select('status')
-      .eq('user_id',currentUser.id)
-      .order('created_at',{ascending:false})
-      .limit(1)
-      .maybeSingle()
+   db.from('subscriptions')
+  .select('status')
+  .eq('user_id',currentUser.id)
+
   ]);
 
   if(tripsRes.error||vehicleRes.error){
@@ -237,8 +235,11 @@ async function loadCloudData(){
     return;
   }
 
-  const isSubscribed = !subscriptionRes.error &&
-    ['active','trialing'].includes(subscriptionRes.data?.status);
+ const isSubscribed = !subscriptionRes.error &&
+  (subscriptionRes.data || []).some(s =>
+    ['active','trialing'].includes(s.status)
+  );
+
 
   document.getElementById('subscriptionStatus').textContent =
     subscriptionRes.error
