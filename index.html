@@ -799,6 +799,101 @@ ${closingGap===null?'No trips recorded':closingGap.toLocaleString()+' km'}
  <script>
  window.onload=function(){window.print();}
  <\/script>
+
+ <script>
+/* KM Tax Logbook Australia - GPS Tracker */
+
+let gpsWatchId = null;
+let gpsStartPosition = null;
+let gpsStartTime = null;
+let gpsLastPosition = null;
+let gpsDistance = 0;
+
+function startGPSTracking() {
+  if (!navigator.geolocation) {
+    alert("GPS is not supported on this device.");
+    return;
+  }
+
+  if (gpsWatchId !== null) {
+    alert("GPS tracking is already running.");
+    return;
+  }
+
+  gpsDistance = 0;
+  gpsStartPosition = null;
+  gpsLastPosition = null;
+  gpsStartTime = new Date();
+
+  gpsWatchId = navigator.geolocation.watchPosition(
+    function(position) {
+      const current = position.coords;
+
+      if (current.accuracy > 50) return;
+
+      if (!gpsStartPosition) {
+        gpsStartPosition = position;
+        gpsLastPosition = position;
+        return;
+      }
+
+      const distance = calculateGPSDistance(
+        gpsLastPosition.coords.latitude,
+        gpsLastPosition.coords.longitude,
+        current.latitude,
+        current.longitude
+      );
+
+      if (distance > 0.005 && distance < 2) {
+        gpsDistance += distance;
+        gpsLastPosition = position;
+      }
+    },
+    function(error) {
+      alert("GPS error: " + error.message);
+    },
+    {
+      enableHighAccuracy: true,
+      maximumAge: 0,
+      timeout: 15000
+    }
+  );
+
+  alert("GPS trip tracking started.");
+}
+
+function calculateGPSDistance(lat1, lon1, lat2, lon2) {
+  const R = 6371;
+  const rad = value => value * Math.PI / 180;
+
+  const dLat = rad(lat2 - lat1);
+  const dLon = rad(lon2 - lon1);
+
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(rad(lat1)) *
+    Math.cos(rad(lat2)) *
+    Math.sin(dLon / 2) ** 2;
+
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+function stopGPSTracking() {
+  if (gpsWatchId === null) return;
+
+  navigator.geolocation.clearWatch(gpsWatchId);
+  gpsWatchId = null;
+
+  const kilometres = gpsDistance.toFixed(2);
+
+  alert("GPS trip finished. Distance: " + kilometres + " km");
+
+  gpsStartPosition = null;
+  gpsLastPosition = null;
+  gpsStartTime = null;
+}
+</script>
+
  </body>
  </html>
  `);
