@@ -748,6 +748,7 @@ const closingGap=lastTrip
    <td>${esc(t.to)}</td>
    <td>${esc(t.purpose)}</td>
    <td>${Number(km(t)).toLocaleString()}</td>
+   <td>${t.gpsDistance != null ? Number(t.gpsDistance).toLocaleString() : '—'}</td>
   </tr>
  `).join('');
 
@@ -832,7 +833,7 @@ ${closingGap===null?'No trips recorded':closingGap.toLocaleString()+' km'}
  <table>
  <thead><tr>
  <th>Date</th><th>Type</th><th>From</th><th>To</th>
- <th>Purpose</th><th>KM</th>
+ <th>Purpose</th><th>KM</th><th>GPS KM</th>
  </tr></thead>
  <tbody>${rows||'<tr><td colspan="6">No trips recorded</td></tr>'}</tbody>
  </table>
