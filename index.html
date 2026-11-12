@@ -100,11 +100,41 @@ button:disabled{opacity:.6;cursor:wait}
 </section>
 <section id="trip" class="page hidden">
 <div class="card"><h2 id="tripHeading">Record a trip</h2>
+  <div class="card" style="margin:12px 0;background:#f7f5ef">
+  <h3>Automatic GPS Trip Tracking</h3>
+  <p class="hint">Record your journey using your device GPS.</p>
+
+  <div class="actions">
+    <button class="gold" type="button" onclick="startGPSTracking()">
+      Start GPS Trip
+    </button>
+
+    <button class="secondary" type="button" onclick="stopGPSTracking()">
+      Stop GPS Trip
+    </button>
+  </div>
+
+  <div id="gpsStatus" class="notice" style="margin-top:12px">
+    GPS tracking is currently stopped.
+  </div>
+
+  <div style="margin-top:10px">
+    <strong>Distance recorded:</strong>
+    <span id="gpsDistanceDisplay">0.00 km</span>
+  </div>
+</div>
+
 <form id="tripForm"><div class="grid">
 <div class="field"><label for="date">Trip date</label><input id="date" type="date" required></div>
 <div class="field"><label for="type">Trip type</label><select id="type"><option value="Business">Business / work</option><option value="Private">Private</option></select></div>
 <div class="field"><label for="startOdo">Starting odometer (km)</label><input id="startOdo" type="number" min="0" step="0.1" required placeholder="e.g. 82540"></div>
 <div class="field"><label for="endOdo">Ending odometer (km)</label><input id="endOdo" type="number" min="0" step="0.1" required placeholder="e.g. 82612"></div>
+  <div class="field">
+  <label for="gpsTripKm">GPS estimated distance (km)</label>
+  <input id="gpsTripKm" type="number" readonly placeholder="GPS distance will appear here">
+  <span class="hint">Estimated distance only. Verify against actual odometer readings.</span>
+</div>
+
 <div class="field"><label for="from">Trip started at</label><input id="from" placeholder="e.g. Home / workshop"></div>
 <div class="field"><label for="to">Destination</label><input id="to" placeholder="e.g. Client address / supplier"></div>
 <div class="field full"><label for="purpose">Reason / purpose of trip</label><textarea id="purpose" required placeholder="Describe the work-related reason clearly"></textarea><span class="hint">For work trips, be specific enough to explain how the travel relates to earning income.</span></div>
@@ -267,7 +297,11 @@ if (!isSubscribed) {
   state.trips=(tripsRes.data||[]).map(t=>({
     id:t.id,date:t.trip_date,type:t.trip_type||'Business',
     start:t.start_odometer,end:t.end_odometer,
-    from:t.start_location,to:t.end_location,purpose:t.purpose
+   from:t.start_location,
+to:t.end_location,
+purpose:t.purpose,
+gpsDistance:t.gps_distance_km
+
   }));
 
   const v=(vehicleRes.data||[])[0];
@@ -341,6 +375,7 @@ function editTrip(id){
  setVal('type',t.type);
  setVal('startOdo',t.start);
  setVal('endOdo',t.end);
+  setVal('gpsTripKm', t.gpsDistance ?? '');
  setVal('from',t.from);
  setVal('to',t.to);
  setVal('purpose',t.purpose);
@@ -366,6 +401,7 @@ document.getElementById('tripForm').addEventListener('submit',async e=>{
   start_odometer:start,
   end_odometer:end,
   kilometres:end-start,
+   gps_distance_km: val('gpsTripKm') === '' ? null : Number(val('gpsTripKm')),
   start_location:val('from').trim()||'Not entered',
   end_location:val('to').trim()||'Not entered',
   purpose:val('purpose').trim()
@@ -381,7 +417,18 @@ document.getElementById('tripForm').addEventListener('submit',async e=>{
   }
   if(result.error)throw result.error;
   const d=result.data;
-  const updated={id:d.id,date:d.trip_date,type:d.trip_type,start:d.start_odometer,end:d.end_odometer,from:d.start_location,to:d.end_location,purpose:d.purpose};
+ const updated={
+  id:d.id,
+  date:d.trip_date,
+  type:d.trip_type,
+  start:d.start_odometer,
+  end:d.end_odometer,
+  from:d.start_location,
+  to:d.end_location,
+  purpose:d.purpose,
+  gpsDistance:d.gps_distance_km
+};
+
   if(editingTripId){
    const index=state.trips.findIndex(t=>String(t.id)===String(editingTripId));
    if(index>=0)state.trips[index]=updated;
@@ -436,8 +483,20 @@ document.getElementById('vehicleForm').addEventListener('submit',async e=>{
 
 function csvCell(s){return '"'+String(s??'').replace(/"/g,'""')+'"'}
 function exportCSV(){
- const rows=[['Date','Type','Start location','Destination','Purpose','Start odometer km','End odometer km','Distance km'],
- ...state.trips.slice().sort((a,b)=>a.date.localeCompare(b.date)).map(t=>[t.date,t.type,t.from,t.to,t.purpose,t.start,t.end,km(t)])];
+const rows=[['Date','Type','Start location','Destination','Purpose','Start odometer km','End odometer km','Distance km','GPS estimated distance km'],
+...state.trips.slice().sort((a,b)=>a.date.localeCompare(b.date)).map(t=>[
+  t.date,
+  t.type,
+  t.from,
+  t.to,
+  t.purpose,
+  t.start,
+  t.end,
+  km(t),
+  t.gpsDistance ?? ''
+])];
+
+
  const csv=rows.map(r=>r.map(csvCell).join(',')).join('\r\n');
  download('km-tax-logbook-trips.csv','text/csv;charset=utf-8','\ufeff'+csv);
 }
@@ -800,99 +859,7 @@ ${closingGap===null?'No trips recorded':closingGap.toLocaleString()+' km'}
  window.onload=function(){window.print();}
  <\/script>
 
- <script>
-/* KM Tax Logbook Australia - GPS Tracker */
 
-let gpsWatchId = null;
-let gpsStartPosition = null;
-let gpsStartTime = null;
-let gpsLastPosition = null;
-let gpsDistance = 0;
-
-function startGPSTracking() {
-  if (!navigator.geolocation) {
-    alert("GPS is not supported on this device.");
-    return;
-  }
-
-  if (gpsWatchId !== null) {
-    alert("GPS tracking is already running.");
-    return;
-  }
-
-  gpsDistance = 0;
-  gpsStartPosition = null;
-  gpsLastPosition = null;
-  gpsStartTime = new Date();
-
-  gpsWatchId = navigator.geolocation.watchPosition(
-    function(position) {
-      const current = position.coords;
-
-      if (current.accuracy > 50) return;
-
-      if (!gpsStartPosition) {
-        gpsStartPosition = position;
-        gpsLastPosition = position;
-        return;
-      }
-
-      const distance = calculateGPSDistance(
-        gpsLastPosition.coords.latitude,
-        gpsLastPosition.coords.longitude,
-        current.latitude,
-        current.longitude
-      );
-
-      if (distance > 0.005 && distance < 2) {
-        gpsDistance += distance;
-        gpsLastPosition = position;
-      }
-    },
-    function(error) {
-      alert("GPS error: " + error.message);
-    },
-    {
-      enableHighAccuracy: true,
-      maximumAge: 0,
-      timeout: 15000
-    }
-  );
-
-  alert("GPS trip tracking started.");
-}
-
-function calculateGPSDistance(lat1, lon1, lat2, lon2) {
-  const R = 6371;
-  const rad = value => value * Math.PI / 180;
-
-  const dLat = rad(lat2 - lat1);
-  const dLon = rad(lon2 - lon1);
-
-  const a =
-    Math.sin(dLat / 2) ** 2 +
-    Math.cos(rad(lat1)) *
-    Math.cos(rad(lat2)) *
-    Math.sin(dLon / 2) ** 2;
-
-  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-}
-
-function stopGPSTracking() {
-  if (gpsWatchId === null) return;
-
-  navigator.geolocation.clearWatch(gpsWatchId);
-  gpsWatchId = null;
-
-  const kilometres = gpsDistance.toFixed(2);
-
-  alert("GPS trip finished. Distance: " + kilometres + " km");
-
-  gpsStartPosition = null;
-  gpsLastPosition = null;
-  gpsStartTime = null;
-}
-</script>
 
  </body>
  </html>
@@ -958,6 +925,119 @@ async function startSubscription() {
     console.error('Subscription error:', err);
     message.textContent = err.message || 'Payment connection failed.';
   }
+}
+ 
+/* KM Tax Logbook Australia - GPS Tracker */
+
+let gpsWatchId = null;
+let gpsStartPosition = null;
+let gpsStartTime = null;
+let gpsLastPosition = null;
+let gpsDistance = 0;
+
+function startGPSTracking() {
+  if (!navigator.geolocation) {
+    alert("GPS is not supported on this device.");
+    return;
+  }
+
+  if (gpsWatchId !== null) {
+    alert("GPS tracking is already running.");
+    return;
+  }
+
+  gpsDistance = 0;
+  gpsStartPosition = null;
+  gpsLastPosition = null;
+  gpsStartTime = new Date();
+
+  const status = document.getElementById("gpsStatus");
+  const display = document.getElementById("gpsDistanceDisplay");
+
+  status.textContent = "Waiting for GPS location...";
+  display.textContent = "0.00 km";
+
+  gpsWatchId = navigator.geolocation.watchPosition(
+    function(position) {
+      const current = position.coords;
+
+      if (current.accuracy > 50) return;
+
+      if (!gpsStartPosition) {
+        gpsStartPosition = position;
+        gpsLastPosition = position;
+        status.textContent = "GPS active - trip recording.";
+        return;
+      }
+
+      const distance = calculateGPSDistance(
+        gpsLastPosition.coords.latitude,
+        gpsLastPosition.coords.longitude,
+        current.latitude,
+        current.longitude
+      );
+
+      if (distance > 0.005 && distance < 2) {
+        gpsDistance += distance;
+        gpsLastPosition = position;
+      }
+
+      display.textContent = gpsDistance.toFixed(2) + " km";
+    },
+    function(error) {
+      status.textContent = "GPS error: " + error.message;
+      gpsWatchId = null;
+    },
+    {
+      enableHighAccuracy: true,
+      maximumAge: 0,
+      timeout: 15000
+    }
+  );
+}
+
+function calculateGPSDistance(lat1, lon1, lat2, lon2) {
+  const R = 6371;
+  const rad = value => value * Math.PI / 180;
+
+  const dLat = rad(lat2 - lat1);
+  const dLon = rad(lon2 - lon1);
+
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(rad(lat1)) *
+    Math.cos(rad(lat2)) *
+    Math.sin(dLon / 2) ** 2;
+
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+function stopGPSTracking() {
+  if (gpsWatchId === null) {
+    alert("No GPS trip is currently running.");
+    return;
+  }
+
+  navigator.geolocation.clearWatch(gpsWatchId);
+  gpsWatchId = null;
+
+  const kilometres = gpsDistance.toFixed(2);
+
+  document.getElementById("gpsStatus").textContent =
+    "GPS trip stopped. Review your trip details below.";
+
+  document.getElementById("gpsDistanceDisplay").textContent =
+    kilometres + " km";
+
+  document.getElementById("gpsTripKm").value = kilometres;
+  document.getElementById("tripError").textContent =
+    "GPS distance is an estimate. Enter your actual odometer readings before saving.";
+
+  alert("GPS trip finished. Estimated distance: " + kilometres + " km");
+
+  gpsStartPosition = null;
+  gpsLastPosition = null;
+  gpsStartTime = null;
 }
 
 </script>
