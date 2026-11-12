@@ -938,7 +938,15 @@ let gpsStartTime = null;
 let gpsLastPosition = null;
 let gpsDistance = 0;
 
+
+let gpsWatchId = null;
+let gpsStartPosition = null;
+let gpsStartTime = null;
+let gpsLastPosition = null;
+let gpsDistance = 0;
+
 function startGPSTracking() {
+
   if (!navigator.geolocation) {
     alert("GPS is not supported on this device.");
     return;
@@ -957,19 +965,32 @@ function startGPSTracking() {
   const status = document.getElementById("gpsStatus");
   const display = document.getElementById("gpsDistanceDisplay");
 
-  status.textContent = "Waiting for GPS location...";
+  status.textContent = "Acquiring GPS signal...";
   display.textContent = "0.00 km";
 
   gpsWatchId = navigator.geolocation.watchPosition(
+
     function(position) {
+
       const current = position.coords;
 
-      if (current.accuracy > 50) return;
+      const accuracy = current.accuracy;
+
+      if (accuracy > 50) {
+        status.textContent =
+          "GPS signal weak - accuracy " +
+          Math.round(accuracy) + " metres";
+        return;
+      }
 
       if (!gpsStartPosition) {
         gpsStartPosition = position;
         gpsLastPosition = position;
-        status.textContent = "GPS active - trip recording.";
+
+        status.textContent =
+          "GPS active - accuracy " +
+          Math.round(accuracy) + " metres";
+
         return;
       }
 
@@ -980,27 +1001,50 @@ function startGPSTracking() {
         current.longitude
       );
 
-      if (distance > 0.005 && distance < 2) {
+      const elapsed =
+        (position.timestamp - gpsLastPosition.timestamp) / 1000;
+
+      // Reject unrealistic GPS jumps.
+      const speed = elapsed > 0 ? distance / (elapsed / 3600) : 0;
+
+      if (
+        distance > 0.005 &&
+        distance < 2 &&
+        speed < 180
+      ) {
         gpsDistance += distance;
+        gpsLastPosition = position;
+      } else if (distance <= 0.005) {
         gpsLastPosition = position;
       }
 
       display.textContent = gpsDistance.toFixed(2) + " km";
+
+      status.textContent =
+        "GPS recording - accuracy " +
+        Math.round(accuracy) + " metres";
     },
+
     function(error) {
-      status.textContent = "GPS error: " + error.message;
-      gpsWatchId = null;
+
+      status.textContent =
+        "GPS unavailable: " + error.message;
+
+      // Keep the tracking state available for retry.
     },
+
     {
       enableHighAccuracy: true,
       maximumAge: 0,
-      timeout: 15000
+      timeout: 20000
     }
   );
 }
 
 function calculateGPSDistance(lat1, lon1, lat2, lon2) {
+
   const R = 6371;
+
   const rad = value => value * Math.PI / 180;
 
   const dLat = rad(lat2 - lat1);
@@ -1012,10 +1056,12 @@ function calculateGPSDistance(lat1, lon1, lat2, lon2) {
     Math.cos(rad(lat2)) *
     Math.sin(dLon / 2) ** 2;
 
-  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * 2 *
+    Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
 function stopGPSTracking() {
+
   if (gpsWatchId === null) {
     alert("No GPS trip is currently running.");
     return;
@@ -1027,20 +1073,24 @@ function stopGPSTracking() {
   const kilometres = gpsDistance.toFixed(2);
 
   document.getElementById("gpsStatus").textContent =
-    "GPS trip stopped. Review your trip details below.";
+    "GPS stopped - review your trip.";
 
   document.getElementById("gpsDistanceDisplay").textContent =
     kilometres + " km";
 
   document.getElementById("gpsTripKm").value = kilometres;
-  document.getElementById("tripError").textContent =
-    "GPS distance is an estimate. Enter your actual odometer readings before saving.";
 
-  alert("GPS trip finished. Estimated distance: " + kilometres + " km");
+  document.getElementById("tripError").textContent =
+    "GPS distance is an estimate. Check actual odometer readings.";
 
   gpsStartPosition = null;
   gpsLastPosition = null;
   gpsStartTime = null;
+
+  alert(
+    "GPS trip finished. Estimated distance: " +
+    kilometres + " km"
+  );
 }
 
 </script>
