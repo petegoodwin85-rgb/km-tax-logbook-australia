@@ -347,8 +347,10 @@ document.getElementById('totalKm').textContent =
   <td>${esc(t.type)}</td>
   <td><b>${esc(t.from||'—')} → ${esc(t.to||'—')}</b><br>${esc(t.purpose)}</td>
   <td>${Number(t.start).toLocaleString()} → ${Number(t.end).toLocaleString()}</td>
-  <td>${km(t).toLocaleString()} km</td>
+   <td>${km(t).toLocaleString()} km</td>
+  <td>${t.gpsDistance != null ? Number(t.gpsDistance).toLocaleString() + ' km' : '—'}</td>
   <td class="no-print">
+
    <button class="secondary" onclick="editTrip('${String(t.id).replace(/'/g,"\\'")}')">Edit</button>
    <button class="danger" onclick="deleteTrip('${String(t.id).replace(/'/g,"\\'")}')">Delete</button>
   </td>
